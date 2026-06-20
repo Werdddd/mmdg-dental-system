@@ -1,0 +1,22 @@
+import type { Metadata } from 'next'
+import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'MMDG Dental System',
+  description: 'Mendez Multispecialty Dental Group',
+  icons: {
+    icon: '/favicon.svg',
+  },
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body className="min-h-svh bg-background">{children}</body>
+    </html>
+  )
+}
