@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { label: 'Patients', icon: Users, href: '/patients' },
   { label: 'Payments', icon: Wallet, href: '/payments' },
   { label: 'Invoices', icon: Receipt, href: '/invoices' },
-  { label: 'Settings', icon: Settings, href: null },
+  { label: 'Settings', icon: Settings, href: '/settings' },
 ]
 
 export function Sidebar() {
