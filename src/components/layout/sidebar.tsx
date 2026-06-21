@@ -19,8 +19,8 @@ const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { label: 'Appointments', icon: CalendarDays, href: '/appointments' },
   { label: 'Patients', icon: Users, href: '/patients' },
-  { label: 'Payments', icon: Wallet, href: null },
-  { label: 'Invoices', icon: Receipt, href: null },
+  { label: 'Payments', icon: Wallet, href: '/payments' },
+  { label: 'Invoices', icon: Receipt, href: '/invoices' },
   { label: 'Settings', icon: Settings, href: null },
 ]
 

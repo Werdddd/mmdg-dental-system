@@ -1,14 +1,28 @@
 'use client'
 
-import { LayoutGrid, List, Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { LayoutGrid, List } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { ListToolbar } from '@/components/shared/list-toolbar'
 import { cn } from '@/lib/utils'
+
+export type PatientsSortOption =
+  | 'Recent'
+  | 'Oldest'
+  | 'Name (A–Z)'
+  | 'Age (Oldest First)'
+
+const SORT_OPTIONS: PatientsSortOption[] = [
+  'Recent',
+  'Oldest',
+  'Name (A–Z)',
+  'Age (Oldest First)',
+]
 
 interface PatientsToolbarProps {
   search: string
   onSearchChange: (value: string) => void
+  sort: PatientsSortOption
+  onSortChange: (value: PatientsSortOption) => void
   view: 'grid' | 'list'
   onViewChange: (view: 'grid' | 'list') => void
 }
@@ -16,28 +30,21 @@ interface PatientsToolbarProps {
 export function PatientsToolbar({
   search,
   onSearchChange,
+  sort,
+  onSortChange,
   view,
   onViewChange,
 }: PatientsToolbarProps) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search patients…"
-            className="pl-9"
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-          />
-        </div>
-
-        <Button variant="outline" className="gap-1.5">
-          <SlidersHorizontal className="size-4" />
-          Filter
-        </Button>
-
+    <ListToolbar
+      search={search}
+      onSearchChange={onSearchChange}
+      searchPlaceholder="Search patients…"
+      sort={sort}
+      sortOptions={SORT_OPTIONS}
+      onSortChange={onSortChange}
+      primaryLabel="New Patient"
+      extra={
         <div className="inline-flex items-center rounded-lg border p-1">
           <button
             type="button"
@@ -68,12 +75,7 @@ export function PatientsToolbar({
             <List className="size-4" />
           </button>
         </div>
-      </div>
-
-      <Button className="gap-1.5">
-        <Plus className="size-4" />
-        New Patient
-      </Button>
-    </div>
+      }
+    />
   )
 }

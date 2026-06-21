@@ -4,39 +4,43 @@ import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
-import { AppointmentsSummaryCards } from '@/components/appointments/appointments-summary-cards'
+import { PaymentsSummaryCards } from '@/components/payments/payments-summary-cards'
+import { PaymentsTable } from '@/components/payments/payments-table'
 import {
-  AppointmentsToolbar,
-  type SortOption,
-} from '@/components/appointments/appointments-toolbar'
-import { AppointmentsTable } from '@/components/appointments/appointments-table'
-import { APPOINTMENTS } from '@/components/appointments/data'
+  PaymentsToolbar,
+  type PaymentsSortOption,
+} from '@/components/payments/payments-toolbar'
+import { PAYMENTS } from '@/components/payments/data'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
-export function AppointmentsView() {
+export function PaymentsView() {
   const [search, setSearch] = useState('')
-  const [sort, setSort] = useState<SortOption>('Recent')
+  const [sort, setSort] = useState<PaymentsSortOption>('Recent')
   const [pageSize, setPageSize] = useState('10')
   const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
     const rows = query
-      ? APPOINTMENTS.filter(
-          (appt) =>
-            appt.patient.name.toLowerCase().includes(query) ||
-            appt.dentist.name.toLowerCase().includes(query),
+      ? PAYMENTS.filter(
+          (payment) =>
+            payment.patient.name.toLowerCase().includes(query) ||
+            payment.id.toLowerCase().includes(query) ||
+            payment.invoiceId.toLowerCase().includes(query) ||
+            payment.service.toLowerCase().includes(query),
         )
-      : [...APPOINTMENTS]
+      : [...PAYMENTS]
 
     switch (sort) {
       case 'Oldest':
         return rows.reverse()
+      case 'Amount (High to Low)':
+        return rows.sort((a, b) => b.amount - a.amount)
+      case 'Amount (Low to High)':
+        return rows.sort((a, b) => a.amount - b.amount)
       case 'Patient (A–Z)':
         return rows.sort((a, b) => a.patient.name.localeCompare(b.patient.name))
-      case 'Status':
-        return rows.sort((a, b) => a.status.localeCompare(b.status))
       case 'Recent':
       default:
         return rows
@@ -54,7 +58,7 @@ export function AppointmentsView() {
     setPage(1)
   }
 
-  function handleSortChange(value: SortOption) {
+  function handleSortChange(value: PaymentsSortOption) {
     setSort(value)
     setPage(1)
   }
@@ -68,21 +72,17 @@ export function AppointmentsView() {
     <>
       <div>
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Appointments
-          </h1>
-          <Badge variant="purple">
-            {APPOINTMENTS.length} total appointments
-          </Badge>
+          <h1 className="text-2xl font-semibold tracking-tight">Payments</h1>
+          <Badge variant="purple">{PAYMENTS.length} total payments</Badge>
         </div>
         <p className="text-muted-foreground">
-          Manage upcoming, ongoing, and past patient appointments.
+          Track patient payments, methods, and outstanding balances.
         </p>
       </div>
 
-      <AppointmentsSummaryCards />
+      <PaymentsSummaryCards />
 
-      <AppointmentsToolbar
+      <PaymentsToolbar
         search={search}
         onSearchChange={handleSearchChange}
         sort={sort}
@@ -90,7 +90,7 @@ export function AppointmentsView() {
       />
 
       <div className="rounded-xl border bg-card shadow-sm">
-        <AppointmentsTable appointments={visible} />
+        <PaymentsTable payments={visible} />
 
         <Pagination
           page={currentPage}

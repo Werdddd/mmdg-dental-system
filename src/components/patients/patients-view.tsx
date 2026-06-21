@@ -3,24 +3,68 @@
 import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
-import { PatientsToolbar } from '@/components/patients/patients-toolbar'
+import { Pagination } from '@/components/shared/pagination'
+import { PatientsSummaryCards } from '@/components/patients/patients-summary-cards'
+import {
+  PatientsToolbar,
+  type PatientsSortOption,
+} from '@/components/patients/patients-toolbar'
 import { PatientCard } from '@/components/patients/patient-card'
 import { PATIENTS } from '@/components/patients/data'
 import { cn } from '@/lib/utils'
 
+const PAGE_SIZE_OPTIONS = ['8', '12', '24', '48']
+
 export function PatientsView() {
   const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<PatientsSortOption>('Recent')
   const [view, setView] = useState<'grid' | 'list'>('grid')
+  const [pageSize, setPageSize] = useState('8')
+  const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
-    if (!query) return PATIENTS
-    return PATIENTS.filter(
-      (patient) =>
-        patient.name.toLowerCase().includes(query) ||
-        patient.address.toLowerCase().includes(query),
-    )
-  }, [search])
+    const rows = query
+      ? PATIENTS.filter(
+          (patient) =>
+            patient.name.toLowerCase().includes(query) ||
+            patient.address.toLowerCase().includes(query),
+        )
+      : [...PATIENTS]
+
+    switch (sort) {
+      case 'Oldest':
+        return rows.reverse()
+      case 'Name (A–Z)':
+        return rows.sort((a, b) => a.name.localeCompare(b.name))
+      case 'Age (Oldest First)':
+        return rows.sort((a, b) => b.age - a.age)
+      case 'Recent':
+      default:
+        return rows
+    }
+  }, [search, sort])
+
+  const size = Number(pageSize)
+  const totalPages = Math.max(1, Math.ceil(filtered.length / size))
+  const currentPage = Math.min(page, totalPages)
+  const start = (currentPage - 1) * size
+  const visible = filtered.slice(start, start + size)
+
+  function handleSearchChange(value: string) {
+    setSearch(value)
+    setPage(1)
+  }
+
+  function handleSortChange(value: PatientsSortOption) {
+    setSort(value)
+    setPage(1)
+  }
+
+  function handlePageSizeChange(value: string) {
+    setPageSize(value)
+    setPage(1)
+  }
 
   return (
     <>
@@ -34,9 +78,13 @@ export function PatientsView() {
         </p>
       </div>
 
+      <PatientsSummaryCards />
+
       <PatientsToolbar
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={handleSearchChange}
+        sort={sort}
+        onSortChange={handleSortChange}
         view={view}
         onViewChange={setView}
       />
@@ -46,17 +94,32 @@ export function PatientsView() {
           No patients match your search.
         </div>
       ) : (
-        <div
-          className={cn(
-            view === 'grid'
-              ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'
-              : 'flex flex-col gap-3',
-          )}
-        >
-          {filtered.map((patient) => (
-            <PatientCard key={patient.id} patient={patient} view={view} />
-          ))}
-        </div>
+        <>
+          <div
+            className={cn(
+              view === 'grid'
+                ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'
+                : 'flex flex-col gap-3',
+            )}
+          >
+            {visible.map((patient) => (
+              <PatientCard key={patient.id} patient={patient} view={view} />
+            ))}
+          </div>
+
+          <div className="rounded-xl border bg-card shadow-sm">
+            <Pagination
+              className="border-t-0"
+              page={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              totalCount={filtered.length}
+              onPageChange={setPage}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          </div>
+        </>
       )}
     </>
   )

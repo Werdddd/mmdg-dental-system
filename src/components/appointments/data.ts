@@ -1,3 +1,5 @@
+const TODAY = 'Jun 21, 2026'
+
 export type AppointmentStatus =
   | 'Confirmed'
   | 'Completed'
@@ -412,3 +414,14 @@ export const APPOINTMENTS: AppointmentRow[] = [
     status: 'Confirmed',
   },
 ]
+
+export const APPOINTMENTS_SUMMARY = {
+  todayCount: APPOINTMENTS.filter((a) => a.date === TODAY).length,
+  upcomingCount: APPOINTMENTS.filter(
+    (a) =>
+      a.date !== TODAY &&
+      (a.status === 'Confirmed' || a.status === 'Rescheduled'),
+  ).length,
+  completedCount: APPOINTMENTS.filter((a) => a.status === 'Completed').length,
+  cancelledCount: APPOINTMENTS.filter((a) => a.status === 'Cancelled').length,
+}
