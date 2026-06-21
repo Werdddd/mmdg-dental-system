@@ -1,3 +1,5 @@
+import { MOCK_TODAY } from '@/lib/utils'
+
 export interface PatientRow {
   id: string
   name: string
@@ -223,7 +225,7 @@ export const PATIENTS: PatientRow[] = [
   },
 ]
 
-const REFERENCE_DATE = new Date('2026-06-21')
+const REFERENCE_DATE = new Date(MOCK_TODAY)
 
 function isThisMonth(dateStr: string) {
   const parsed = new Date(dateStr)
@@ -243,11 +245,13 @@ function isWithinNextDays(monthDay: string, days: number) {
   return diffDays <= days
 }
 
-export const PATIENTS_SUMMARY = {
-  totalPatients: PATIENTS.length,
-  newThisMonth: PATIENTS.filter((p) => isThisMonth(p.registeredDate)).length,
-  activeTreatments: PATIENTS.filter((p) => p.treatmentStatus === 'Active')
-    .length,
-  upcomingBirthdays: PATIENTS.filter((p) => isWithinNextDays(p.birthday, 30))
-    .length,
+export function computePatientsSummary(patients: PatientRow[]) {
+  return {
+    totalPatients: patients.length,
+    newThisMonth: patients.filter((p) => isThisMonth(p.registeredDate)).length,
+    activeTreatments: patients.filter((p) => p.treatmentStatus === 'Active')
+      .length,
+    upcomingBirthdays: patients.filter((p) => isWithinNextDays(p.birthday, 30))
+      .length,
+  }
 }

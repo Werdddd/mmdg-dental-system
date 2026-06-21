@@ -25,6 +25,7 @@ interface PatientsToolbarProps {
   onSortChange: (value: PatientsSortOption) => void
   view: 'grid' | 'list'
   onViewChange: (view: 'grid' | 'list') => void
+  onNewClick: () => void
 }
 
 export function PatientsToolbar({
@@ -34,6 +35,7 @@ export function PatientsToolbar({
   onSortChange,
   view,
   onViewChange,
+  onNewClick,
 }: PatientsToolbarProps) {
   return (
     <ListToolbar
@@ -44,6 +46,7 @@ export function PatientsToolbar({
       sortOptions={SORT_OPTIONS}
       onSortChange={onSortChange}
       primaryLabel="New Patient"
+      onPrimaryClick={onNewClick}
       extra={
         <div className="inline-flex items-center rounded-lg border p-1">
           <button

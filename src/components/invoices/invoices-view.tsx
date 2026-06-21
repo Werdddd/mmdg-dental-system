@@ -4,32 +4,35 @@ import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
+import { AddInvoiceDialog } from '@/components/invoices/add-invoice-dialog'
 import { InvoicesSummaryCards } from '@/components/invoices/invoices-summary-cards'
 import { InvoicesTable } from '@/components/invoices/invoices-table'
 import {
   InvoicesToolbar,
   type InvoicesSortOption,
 } from '@/components/invoices/invoices-toolbar'
-import { INVOICES } from '@/components/invoices/data'
+import { INVOICES, type InvoiceRow } from '@/components/invoices/data'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
 export function InvoicesView() {
+  const [invoices, setInvoices] = useState<InvoiceRow[]>(INVOICES)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<InvoicesSortOption>('Recent')
   const [pageSize, setPageSize] = useState('10')
   const [page, setPage] = useState(1)
+  const [addOpen, setAddOpen] = useState(false)
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
     const rows = query
-      ? INVOICES.filter(
+      ? invoices.filter(
           (invoice) =>
             invoice.patient.name.toLowerCase().includes(query) ||
             invoice.id.toLowerCase().includes(query) ||
             invoice.treatment.toLowerCase().includes(query),
         )
-      : [...INVOICES]
+      : [...invoices]
 
     switch (sort) {
       case 'Oldest':
@@ -47,7 +50,7 @@ export function InvoicesView() {
       default:
         return rows
     }
-  }, [search, sort])
+  }, [invoices, search, sort])
 
   const size = Number(pageSize)
   const totalPages = Math.max(1, Math.ceil(filtered.length / size))
@@ -70,25 +73,31 @@ export function InvoicesView() {
     setPage(1)
   }
 
+  function handleAddInvoice(invoice: InvoiceRow) {
+    setInvoices((prev) => [invoice, ...prev])
+    setPage(1)
+  }
+
   return (
     <>
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
-          <Badge variant="purple">{INVOICES.length} total invoices</Badge>
+          <Badge variant="purple">{invoices.length} total invoices</Badge>
         </div>
         <p className="text-muted-foreground">
           Manage billing, due dates, and outstanding balances per patient.
         </p>
       </div>
 
-      <InvoicesSummaryCards />
+      <InvoicesSummaryCards invoices={invoices} />
 
       <InvoicesToolbar
         search={search}
         onSearchChange={handleSearchChange}
         sort={sort}
         onSortChange={handleSortChange}
+        onNewClick={() => setAddOpen(true)}
       />
 
       <div className="rounded-xl border bg-card shadow-sm">
@@ -104,6 +113,13 @@ export function InvoicesView() {
           onPageSizeChange={handlePageSizeChange}
         />
       </div>
+
+      <AddInvoiceDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        invoices={invoices}
+        onAdd={handleAddInvoice}
+      />
     </>
   )
 }

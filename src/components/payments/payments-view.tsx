@@ -4,33 +4,36 @@ import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
+import { AddPaymentDialog } from '@/components/payments/add-payment-dialog'
 import { PaymentsSummaryCards } from '@/components/payments/payments-summary-cards'
 import { PaymentsTable } from '@/components/payments/payments-table'
 import {
   PaymentsToolbar,
   type PaymentsSortOption,
 } from '@/components/payments/payments-toolbar'
-import { PAYMENTS } from '@/components/payments/data'
+import { PAYMENTS, type PaymentRow } from '@/components/payments/data'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
 export function PaymentsView() {
+  const [payments, setPayments] = useState<PaymentRow[]>(PAYMENTS)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<PaymentsSortOption>('Recent')
   const [pageSize, setPageSize] = useState('10')
   const [page, setPage] = useState(1)
+  const [addOpen, setAddOpen] = useState(false)
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
     const rows = query
-      ? PAYMENTS.filter(
+      ? payments.filter(
           (payment) =>
             payment.patient.name.toLowerCase().includes(query) ||
             payment.id.toLowerCase().includes(query) ||
             payment.invoiceId.toLowerCase().includes(query) ||
             payment.service.toLowerCase().includes(query),
         )
-      : [...PAYMENTS]
+      : [...payments]
 
     switch (sort) {
       case 'Oldest':
@@ -45,7 +48,7 @@ export function PaymentsView() {
       default:
         return rows
     }
-  }, [search, sort])
+  }, [payments, search, sort])
 
   const size = Number(pageSize)
   const totalPages = Math.max(1, Math.ceil(filtered.length / size))
@@ -68,25 +71,31 @@ export function PaymentsView() {
     setPage(1)
   }
 
+  function handleAddPayment(payment: PaymentRow) {
+    setPayments((prev) => [payment, ...prev])
+    setPage(1)
+  }
+
   return (
     <>
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">Payments</h1>
-          <Badge variant="purple">{PAYMENTS.length} total payments</Badge>
+          <Badge variant="purple">{payments.length} total payments</Badge>
         </div>
         <p className="text-muted-foreground">
           Track patient payments, methods, and outstanding balances.
         </p>
       </div>
 
-      <PaymentsSummaryCards />
+      <PaymentsSummaryCards payments={payments} />
 
       <PaymentsToolbar
         search={search}
         onSearchChange={handleSearchChange}
         sort={sort}
         onSortChange={handleSortChange}
+        onNewClick={() => setAddOpen(true)}
       />
 
       <div className="rounded-xl border bg-card shadow-sm">
@@ -102,6 +111,13 @@ export function PaymentsView() {
           onPageSizeChange={handlePageSizeChange}
         />
       </div>
+
+      <AddPaymentDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        payments={payments}
+        onAdd={handleAddPayment}
+      />
     </>
   )
 }

@@ -4,33 +4,36 @@ import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
+import { AddPatientDialog } from '@/components/patients/add-patient-dialog'
 import { PatientsSummaryCards } from '@/components/patients/patients-summary-cards'
 import {
   PatientsToolbar,
   type PatientsSortOption,
 } from '@/components/patients/patients-toolbar'
 import { PatientCard } from '@/components/patients/patient-card'
-import { PATIENTS } from '@/components/patients/data'
+import { PATIENTS, type PatientRow } from '@/components/patients/data'
 import { cn } from '@/lib/utils'
 
 const PAGE_SIZE_OPTIONS = ['8', '12', '24', '48']
 
 export function PatientsView() {
+  const [patients, setPatients] = useState<PatientRow[]>(PATIENTS)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<PatientsSortOption>('Recent')
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const [pageSize, setPageSize] = useState('8')
   const [page, setPage] = useState(1)
+  const [addOpen, setAddOpen] = useState(false)
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
     const rows = query
-      ? PATIENTS.filter(
+      ? patients.filter(
           (patient) =>
             patient.name.toLowerCase().includes(query) ||
             patient.address.toLowerCase().includes(query),
         )
-      : [...PATIENTS]
+      : [...patients]
 
     switch (sort) {
       case 'Oldest':
@@ -43,7 +46,7 @@ export function PatientsView() {
       default:
         return rows
     }
-  }, [search, sort])
+  }, [patients, search, sort])
 
   const size = Number(pageSize)
   const totalPages = Math.max(1, Math.ceil(filtered.length / size))
@@ -66,19 +69,24 @@ export function PatientsView() {
     setPage(1)
   }
 
+  function handleAddPatient(patient: PatientRow) {
+    setPatients((prev) => [patient, ...prev])
+    setPage(1)
+  }
+
   return (
     <>
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">Patients</h1>
-          <Badge variant="purple">{PATIENTS.length} total patients</Badge>
+          <Badge variant="purple">{patients.length} total patients</Badge>
         </div>
         <p className="text-muted-foreground">
           Browse and manage every patient registered at your clinic.
         </p>
       </div>
 
-      <PatientsSummaryCards />
+      <PatientsSummaryCards patients={patients} />
 
       <PatientsToolbar
         search={search}
@@ -87,6 +95,7 @@ export function PatientsView() {
         onSortChange={handleSortChange}
         view={view}
         onViewChange={setView}
+        onNewClick={() => setAddOpen(true)}
       />
 
       {filtered.length === 0 ? (
@@ -121,6 +130,13 @@ export function PatientsView() {
           </div>
         </>
       )}
+
+      <AddPatientDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        patients={patients}
+        onAdd={handleAddPatient}
+      />
     </>
   )
 }

@@ -24,7 +24,7 @@ interface InvoiceSeed {
   paidRatio: number
 }
 
-const TAX_RATE = 0.12
+export const TAX_RATE = 0.12
 
 const SEED: InvoiceSeed[] = [
   {
@@ -351,14 +351,19 @@ export const INVOICES: InvoiceRow[] = SEED.map((seed) => {
   }
 })
 
-const totalInvoiced = INVOICES.reduce((sum, inv) => sum + inv.total, 0)
-const outstandingBalance = INVOICES.reduce((sum, inv) => sum + inv.balance, 0)
+export function computeInvoicesSummary(invoices: InvoiceRow[]) {
+  const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.total, 0)
+  const outstandingBalance = invoices.reduce((sum, inv) => sum + inv.balance, 0)
 
-export const INVOICES_SUMMARY = {
-  totalInvoiced,
-  outstandingBalance,
-  overdueCount: INVOICES.filter((inv) => inv.status === 'Overdue').length,
-  collectionRate: Math.round(
-    ((totalInvoiced - outstandingBalance) / totalInvoiced) * 100,
-  ),
+  return {
+    totalInvoiced,
+    outstandingBalance,
+    overdueCount: invoices.filter((inv) => inv.status === 'Overdue').length,
+    collectionRate:
+      totalInvoiced === 0
+        ? 0
+        : Math.round(
+            ((totalInvoiced - outstandingBalance) / totalInvoiced) * 100,
+          ),
+  }
 }

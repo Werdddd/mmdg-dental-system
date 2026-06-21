@@ -4,31 +4,38 @@ import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
+import { AddAppointmentDialog } from '@/components/appointments/add-appointment-dialog'
 import { AppointmentsSummaryCards } from '@/components/appointments/appointments-summary-cards'
 import {
   AppointmentsToolbar,
   type SortOption,
 } from '@/components/appointments/appointments-toolbar'
 import { AppointmentsTable } from '@/components/appointments/appointments-table'
-import { APPOINTMENTS } from '@/components/appointments/data'
+import {
+  APPOINTMENTS,
+  type AppointmentRow,
+} from '@/components/appointments/data'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
 export function AppointmentsView() {
+  const [appointments, setAppointments] =
+    useState<AppointmentRow[]>(APPOINTMENTS)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortOption>('Recent')
   const [pageSize, setPageSize] = useState('10')
   const [page, setPage] = useState(1)
+  const [addOpen, setAddOpen] = useState(false)
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
     const rows = query
-      ? APPOINTMENTS.filter(
+      ? appointments.filter(
           (appt) =>
             appt.patient.name.toLowerCase().includes(query) ||
             appt.dentist.name.toLowerCase().includes(query),
         )
-      : [...APPOINTMENTS]
+      : [...appointments]
 
     switch (sort) {
       case 'Oldest':
@@ -41,7 +48,7 @@ export function AppointmentsView() {
       default:
         return rows
     }
-  }, [search, sort])
+  }, [appointments, search, sort])
 
   const size = Number(pageSize)
   const totalPages = Math.max(1, Math.ceil(filtered.length / size))
@@ -64,6 +71,11 @@ export function AppointmentsView() {
     setPage(1)
   }
 
+  function handleAddAppointment(appointment: AppointmentRow) {
+    setAppointments((prev) => [appointment, ...prev])
+    setPage(1)
+  }
+
   return (
     <>
       <div>
@@ -72,7 +84,7 @@ export function AppointmentsView() {
             Appointments
           </h1>
           <Badge variant="purple">
-            {APPOINTMENTS.length} total appointments
+            {appointments.length} total appointments
           </Badge>
         </div>
         <p className="text-muted-foreground">
@@ -80,13 +92,14 @@ export function AppointmentsView() {
         </p>
       </div>
 
-      <AppointmentsSummaryCards />
+      <AppointmentsSummaryCards appointments={appointments} />
 
       <AppointmentsToolbar
         search={search}
         onSearchChange={handleSearchChange}
         sort={sort}
         onSortChange={handleSortChange}
+        onNewClick={() => setAddOpen(true)}
       />
 
       <div className="rounded-xl border bg-card shadow-sm">
@@ -102,6 +115,13 @@ export function AppointmentsView() {
           onPageSizeChange={handlePageSizeChange}
         />
       </div>
+
+      <AddAppointmentDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        appointments={appointments}
+        onAdd={handleAddAppointment}
+      />
     </>
   )
 }

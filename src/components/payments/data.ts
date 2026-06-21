@@ -345,16 +345,17 @@ export const PAYMENTS: PaymentRow[] = [
   },
 ]
 
-export const PAYMENTS_SUMMARY = {
-  totalRevenue: PAYMENTS.filter(
-    (p) => p.status === 'Paid' || p.status === 'Partially Paid',
-  ).reduce((sum, p) => sum + p.amount, 0),
-  paidCount: PAYMENTS.filter((p) => p.status === 'Paid').length,
-  pendingCount: PAYMENTS.filter(
-    (p) => p.status === 'Unpaid' || p.status === 'Partially Paid',
-  ).length,
-  refundedAmount: PAYMENTS.filter((p) => p.status === 'Refunded').reduce(
-    (sum, p) => sum + p.amount,
-    0,
-  ),
+export function computePaymentsSummary(payments: PaymentRow[]) {
+  return {
+    totalRevenue: payments
+      .filter((p) => p.status === 'Paid' || p.status === 'Partially Paid')
+      .reduce((sum, p) => sum + p.amount, 0),
+    paidCount: payments.filter((p) => p.status === 'Paid').length,
+    pendingCount: payments.filter(
+      (p) => p.status === 'Unpaid' || p.status === 'Partially Paid',
+    ).length,
+    refundedAmount: payments
+      .filter((p) => p.status === 'Refunded')
+      .reduce((sum, p) => sum + p.amount, 0),
+  }
 }

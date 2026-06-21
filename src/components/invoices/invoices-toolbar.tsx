@@ -22,6 +22,7 @@ interface InvoicesToolbarProps {
   onSearchChange: (value: string) => void
   sort: InvoicesSortOption
   onSortChange: (value: InvoicesSortOption) => void
+  onNewClick: () => void
 }
 
 export function InvoicesToolbar({
@@ -29,6 +30,7 @@ export function InvoicesToolbar({
   onSearchChange,
   sort,
   onSortChange,
+  onNewClick,
 }: InvoicesToolbarProps) {
   return (
     <ListToolbar
@@ -39,6 +41,7 @@ export function InvoicesToolbar({
       sortOptions={SORT_OPTIONS}
       onSortChange={onSortChange}
       primaryLabel="New Invoice"
+      onPrimaryClick={onNewClick}
     />
   )
 }

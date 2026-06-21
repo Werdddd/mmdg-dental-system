@@ -22,6 +22,7 @@ interface PaymentsToolbarProps {
   onSearchChange: (value: string) => void
   sort: PaymentsSortOption
   onSortChange: (value: PaymentsSortOption) => void
+  onNewClick: () => void
 }
 
 export function PaymentsToolbar({
@@ -29,6 +30,7 @@ export function PaymentsToolbar({
   onSearchChange,
   sort,
   onSortChange,
+  onNewClick,
 }: PaymentsToolbarProps) {
   return (
     <ListToolbar
@@ -39,6 +41,7 @@ export function PaymentsToolbar({
       sortOptions={SORT_OPTIONS}
       onSortChange={onSortChange}
       primaryLabel="New Payment"
+      onPrimaryClick={onNewClick}
     />
   )
 }

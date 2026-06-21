@@ -16,6 +16,7 @@ interface AppointmentsToolbarProps {
   onSearchChange: (value: string) => void
   sort: SortOption
   onSortChange: (value: SortOption) => void
+  onNewClick: () => void
 }
 
 export function AppointmentsToolbar({
@@ -23,6 +24,7 @@ export function AppointmentsToolbar({
   onSearchChange,
   sort,
   onSortChange,
+  onNewClick,
 }: AppointmentsToolbarProps) {
   return (
     <ListToolbar
@@ -33,6 +35,7 @@ export function AppointmentsToolbar({
       sortOptions={SORT_OPTIONS}
       onSortChange={onSortChange}
       primaryLabel="New Appointment"
+      onPrimaryClick={onNewClick}
     />
   )
 }

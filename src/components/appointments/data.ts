@@ -1,4 +1,4 @@
-const TODAY = 'Jun 21, 2026'
+import { MOCK_TODAY } from '@/lib/utils'
 
 export type AppointmentStatus =
   | 'Confirmed'
@@ -415,13 +415,15 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
 ]
 
-export const APPOINTMENTS_SUMMARY = {
-  todayCount: APPOINTMENTS.filter((a) => a.date === TODAY).length,
-  upcomingCount: APPOINTMENTS.filter(
-    (a) =>
-      a.date !== TODAY &&
-      (a.status === 'Confirmed' || a.status === 'Rescheduled'),
-  ).length,
-  completedCount: APPOINTMENTS.filter((a) => a.status === 'Completed').length,
-  cancelledCount: APPOINTMENTS.filter((a) => a.status === 'Cancelled').length,
+export function computeAppointmentsSummary(appointments: AppointmentRow[]) {
+  return {
+    todayCount: appointments.filter((a) => a.date === MOCK_TODAY).length,
+    upcomingCount: appointments.filter(
+      (a) =>
+        a.date !== MOCK_TODAY &&
+        (a.status === 'Confirmed' || a.status === 'Rescheduled'),
+    ).length,
+    completedCount: appointments.filter((a) => a.status === 'Completed').length,
+    cancelledCount: appointments.filter((a) => a.status === 'Cancelled').length,
+  }
 }
