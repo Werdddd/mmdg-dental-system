@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
 import { AddAppointmentDialog } from '@/components/appointments/add-appointment-dialog'
+import { AppointmentDetailsDialog } from '@/components/appointments/appointment-details-dialog'
 import { AppointmentsSummaryCards } from '@/components/appointments/appointments-summary-cards'
 import {
   AppointmentsToolbar,
@@ -26,6 +27,9 @@ export function AppointmentsView() {
   const [pageSize, setPageSize] = useState('10')
   const [page, setPage] = useState(1)
   const [addOpen, setAddOpen] = useState(false)
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<AppointmentRow | null>(null)
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -76,6 +80,11 @@ export function AppointmentsView() {
     setPage(1)
   }
 
+  function handleRowClick(appointment: AppointmentRow) {
+    setSelectedAppointment(appointment)
+    setDetailsOpen(true)
+  }
+
   return (
     <>
       <div>
@@ -103,7 +112,7 @@ export function AppointmentsView() {
       />
 
       <div className="rounded-xl border bg-card shadow-sm">
-        <AppointmentsTable appointments={visible} />
+        <AppointmentsTable appointments={visible} onRowClick={handleRowClick} />
 
         <Pagination
           page={currentPage}
@@ -121,6 +130,12 @@ export function AppointmentsView() {
         onOpenChange={setAddOpen}
         appointments={appointments}
         onAdd={handleAddAppointment}
+      />
+
+      <AppointmentDetailsDialog
+        appointment={selectedAppointment}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
       />
     </>
   )

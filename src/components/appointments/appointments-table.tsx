@@ -43,12 +43,22 @@ const MODE_ICON = {
 
 interface AppointmentsTableProps {
   appointments: AppointmentRow[]
+  onRowClick?: (appointment: AppointmentRow) => void
+  containerClassName?: string
+  stickyHeader?: boolean
 }
 
-export function AppointmentsTable({ appointments }: AppointmentsTableProps) {
+export function AppointmentsTable({
+  appointments,
+  onRowClick,
+  containerClassName,
+  stickyHeader,
+}: AppointmentsTableProps) {
   return (
-    <Table>
-      <TableHeader>
+    <Table containerClassName={containerClassName}>
+      <TableHeader
+        className={stickyHeader ? 'sticky top-0 z-10 bg-card' : undefined}
+      >
         <TableRow className="hover:bg-transparent">
           <TableHead>Date &amp; Time</TableHead>
           <TableHead>Patient</TableHead>
@@ -69,7 +79,11 @@ export function AppointmentsTable({ appointments }: AppointmentsTableProps) {
         {appointments.map((appt) => {
           const ModeIcon = MODE_ICON[appt.mode]
           return (
-            <TableRow key={appt.id}>
+            <TableRow
+              key={appt.id}
+              className={onRowClick ? 'cursor-pointer' : undefined}
+              onClick={() => onRowClick?.(appt)}
+            >
               <TableCell className="whitespace-nowrap">
                 <p className="font-medium">{appt.date}</p>
                 <p className="text-xs text-muted-foreground">{appt.time}</p>
@@ -113,7 +127,10 @@ export function AppointmentsTable({ appointments }: AppointmentsTableProps) {
               <TableCell>
                 <StatusBadge status={appt.status} variants={STATUS_VARIANT} />
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell
+                className="text-right"
+                onClick={(event) => event.stopPropagation()}
+              >
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     aria-label="Appointment actions"
@@ -122,7 +139,9 @@ export function AppointmentsTable({ appointments }: AppointmentsTableProps) {
                     <MoreHorizontal className="size-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem>View details</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onRowClick?.(appt)}>
+                      View details
+                    </DropdownMenuItem>
                     <DropdownMenuItem>Reschedule</DropdownMenuItem>
                     <DropdownMenuItem>Cancel appointment</DropdownMenuItem>
                   </DropdownMenuContent>
