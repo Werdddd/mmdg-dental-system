@@ -1,4 +1,4 @@
-import { MOCK_TODAY } from '@/lib/utils'
+import { formatDisplayDate } from '@/lib/utils'
 
 export type AppointmentStatus =
   | 'Confirmed'
@@ -416,11 +416,15 @@ export const APPOINTMENTS: AppointmentRow[] = [
 ]
 
 export function computeAppointmentsSummary(appointments: AppointmentRow[]) {
+  const now = new Date()
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const today = formatDisplayDate(todayIso)
+
   return {
-    todayCount: appointments.filter((a) => a.date === MOCK_TODAY).length,
+    todayCount: appointments.filter((a) => a.date === today).length,
     upcomingCount: appointments.filter(
       (a) =>
-        a.date !== MOCK_TODAY &&
+        a.date !== today &&
         (a.status === 'Confirmed' || a.status === 'Rescheduled'),
     ).length,
     completedCount: appointments.filter((a) => a.status === 'Completed').length,

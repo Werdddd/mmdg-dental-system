@@ -19,20 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { PatientFields } from '@/components/shared/patient-fields'
+import { PatientPicker } from '@/components/shared/patient-picker'
 import { TREATMENTS } from '@/components/shared/clinic-roster'
 import {
   TAX_RATE,
   type InvoiceRow,
   type InvoiceStatus,
 } from '@/components/invoices/data'
-import {
-  formatCurrency,
-  formatDisplayDate,
-  initialsOf,
-  MOCK_TODAY,
-  nextSequentialId,
-} from '@/lib/utils'
+import type { PatientRow } from '@/components/patients/data'
+import { formatCurrency } from '@/lib/utils'
+import { addInvoiceAction } from '@/app/(app)/invoices/actions'
 
 const STATUSES: InvoiceStatus[] = [
   'Paid',
@@ -44,65 +40,61 @@ const STATUSES: InvoiceStatus[] = [
 interface AddInvoiceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  invoices: InvoiceRow[]
+  patients: PatientRow[]
   onAdd: (invoice: InvoiceRow) => void
 }
 
 export function AddInvoiceDialog({
   open,
   onOpenChange,
-  invoices,
+  patients,
   onAdd,
 }: AddInvoiceDialogProps) {
-  const [patientName, setPatientName] = useState('')
-  const [patientPhone, setPatientPhone] = useState('')
+  const [patientId, setPatientId] = useState('')
   const [treatment, setTreatment] = useState<string>(TREATMENTS[0])
   const [dueDate, setDueDate] = useState('')
   const [subtotal, setSubtotal] = useState('')
   const [status, setStatus] = useState<InvoiceStatus>('Unpaid')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function resetForm() {
-    setPatientName('')
-    setPatientPhone('')
+    setPatientId('')
     setTreatment(TREATMENTS[0])
     setDueDate('')
     setSubtotal('')
     setStatus('Unpaid')
+    setError(null)
   }
 
   const canSubmit =
-    patientName.trim().length > 0 &&
-    patientPhone.trim().length > 0 &&
+    patientId.length > 0 &&
     dueDate.length > 0 &&
     subtotal.trim().length > 0 &&
-    Number(subtotal) > 0
+    Number(subtotal) > 0 &&
+    !isSubmitting
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!canSubmit) return
 
-    const subtotalAmount = Number(subtotal)
-    const tax = Math.round(subtotalAmount * TAX_RATE)
-    const total = subtotalAmount + tax
-    const balance = status === 'Paid' ? 0 : total
-
-    onAdd({
-      id: nextSequentialId(invoices, (i) => i.id, 'INV-'),
-      patient: {
-        name: patientName.trim(),
-        initials: initialsOf(patientName),
-        phone: patientPhone.trim(),
-      },
-      treatment,
-      createdDate: MOCK_TODAY,
-      dueDate: formatDisplayDate(dueDate),
-      subtotal: subtotalAmount,
-      tax,
-      total,
-      balance,
-      status,
-    })
-    resetForm()
-    onOpenChange(false)
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const invoice = await addInvoiceAction({
+        patientId,
+        treatment,
+        dueDate,
+        subtotal: Number(subtotal),
+        status,
+      })
+      onAdd(invoice)
+      resetForm()
+      onOpenChange(false)
+    } catch {
+      setError('Could not add invoice. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -122,11 +114,10 @@ export function AddInvoiceDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <PatientFields
-            name={patientName}
-            onNameChange={setPatientName}
-            phone={patientPhone}
-            onPhoneChange={setPatientPhone}
+          <PatientPicker
+            patients={patients}
+            value={patientId}
+            onValueChange={setPatientId}
           />
 
           <div>
@@ -205,6 +196,12 @@ export function AddInvoiceDialog({
               )}
             </p>
           )}
+
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
         </div>
 
         <DialogFooter>
@@ -212,7 +209,7 @@ export function AddInvoiceDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
-            Add Invoice
+            {isSubmitting ? 'Adding…' : 'Add Invoice'}
           </Button>
         </DialogFooter>
       </DialogContent>

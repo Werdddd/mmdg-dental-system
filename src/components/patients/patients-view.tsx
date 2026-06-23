@@ -11,13 +11,17 @@ import {
   type PatientsSortOption,
 } from '@/components/patients/patients-toolbar'
 import { PatientCard } from '@/components/patients/patient-card'
-import { PATIENTS, type PatientRow } from '@/components/patients/data'
+import { type PatientRow } from '@/components/patients/data'
 import { cn } from '@/lib/utils'
 
 const PAGE_SIZE_OPTIONS = ['8', '12', '24', '48']
 
-export function PatientsView() {
-  const [patients, setPatients] = useState<PatientRow[]>(PATIENTS)
+interface PatientsViewProps {
+  initialPatients: PatientRow[]
+}
+
+export function PatientsView({ initialPatients }: PatientsViewProps) {
+  const [patients, setPatients] = useState<PatientRow[]>(initialPatients)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<PatientsSortOption>('Recent')
   const [view, setView] = useState<'grid' | 'list'>('grid')
@@ -134,7 +138,6 @@ export function PatientsView() {
       <AddPatientDialog
         open={addOpen}
         onOpenChange={setAddOpen}
-        patients={patients}
         onAdd={handleAddPatient}
       />
     </>

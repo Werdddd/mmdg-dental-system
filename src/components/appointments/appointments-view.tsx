@@ -12,16 +12,25 @@ import {
   type SortOption,
 } from '@/components/appointments/appointments-toolbar'
 import { AppointmentsTable } from '@/components/appointments/appointments-table'
-import {
-  APPOINTMENTS,
-  type AppointmentRow,
-} from '@/components/appointments/data'
+import { type AppointmentRow } from '@/components/appointments/data'
+import type { PatientRow } from '@/components/patients/data'
+import type { DentistOption } from '@/lib/data/dentists'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
-export function AppointmentsView() {
+interface AppointmentsViewProps {
+  initialAppointments: AppointmentRow[]
+  patients: PatientRow[]
+  dentists: DentistOption[]
+}
+
+export function AppointmentsView({
+  initialAppointments,
+  patients,
+  dentists,
+}: AppointmentsViewProps) {
   const [appointments, setAppointments] =
-    useState<AppointmentRow[]>(APPOINTMENTS)
+    useState<AppointmentRow[]>(initialAppointments)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortOption>('Recent')
   const [pageSize, setPageSize] = useState('10')
@@ -128,7 +137,8 @@ export function AppointmentsView() {
       <AddAppointmentDialog
         open={addOpen}
         onOpenChange={setAddOpen}
-        appointments={appointments}
+        patients={patients}
+        dentists={dentists}
         onAdd={handleAddAppointment}
       />
 

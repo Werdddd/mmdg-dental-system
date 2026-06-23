@@ -20,67 +20,66 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { PatientRow } from '@/components/patients/data'
-import {
-  initialsOf,
-  MOCK_TODAY,
-  formatMonthDay,
-  nextSequentialId,
-} from '@/lib/utils'
+import { addPatientAction } from '@/app/(app)/patients/actions'
 
 const GENDERS: PatientRow['gender'][] = ['Male', 'Female']
 
 interface AddPatientDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  patients: PatientRow[]
   onAdd: (patient: PatientRow) => void
 }
 
 export function AddPatientDialog({
   open,
   onOpenChange,
-  patients,
   onAdd,
 }: AddPatientDialogProps) {
   const [name, setName] = useState('')
-  const [age, setAge] = useState('')
+  const [phone, setPhone] = useState('')
   const [gender, setGender] = useState<PatientRow['gender']>('Female')
   const [address, setAddress] = useState('')
   const [birthday, setBirthday] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function resetForm() {
     setName('')
-    setAge('')
+    setPhone('')
     setGender('Female')
     setAddress('')
     setBirthday('')
+    setError(null)
   }
 
   const canSubmit =
     name.trim().length > 0 &&
-    age.trim().length > 0 &&
-    Number(age) > 0 &&
+    phone.trim().length > 0 &&
     address.trim().length > 0 &&
-    birthday.length > 0
+    birthday.length > 0 &&
+    !isSubmitting
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!canSubmit) return
 
-    onAdd({
-      id: nextSequentialId(patients, (p) => p.id, 'pat-'),
-      name: name.trim(),
-      initials: initialsOf(name),
-      age: Number(age),
-      gender,
-      lastAppointment: MOCK_TODAY,
-      lastAppointmentReason: 'Initial Consultation',
-      address: address.trim(),
-      registeredDate: MOCK_TODAY,
-      treatmentStatus: 'Active',
-      birthday: formatMonthDay(birthday),
-    })
-    resetForm()
-    onOpenChange(false)
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const patient = await addPatientAction({
+        fullName: name.trim(),
+        phone: phone.trim(),
+        gender,
+        birthday,
+        address: address.trim(),
+      })
+      onAdd(patient)
+      resetForm()
+      onOpenChange(false)
+    } catch {
+      setError('Could not add patient. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -113,13 +112,13 @@ export function AddPatientDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Age</label>
+              <label className="mb-1.5 block text-sm font-medium">
+                Contact Number
+              </label>
               <Input
-                type="number"
-                min={0}
-                value={age}
-                onChange={(event) => setAge(event.target.value)}
-                placeholder="34"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+                placeholder="+63 912 345 6789"
               />
             </div>
             <div>
@@ -161,6 +160,12 @@ export function AddPatientDialog({
               placeholder="Quezon City, Metro Manila"
             />
           </div>
+
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
         </div>
 
         <DialogFooter>
@@ -168,7 +173,7 @@ export function AddPatientDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
-            Add Patient
+            {isSubmitting ? 'Adding…' : 'Add Patient'}
           </Button>
         </DialogFooter>
       </DialogContent>

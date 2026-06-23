@@ -11,12 +11,24 @@ import {
   PaymentsToolbar,
   type PaymentsSortOption,
 } from '@/components/payments/payments-toolbar'
-import { PAYMENTS, type PaymentRow } from '@/components/payments/data'
+import { type PaymentRow } from '@/components/payments/data'
+import type { PatientRow } from '@/components/patients/data'
+import type { DentistOption } from '@/lib/data/dentists'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
-export function PaymentsView() {
-  const [payments, setPayments] = useState<PaymentRow[]>(PAYMENTS)
+interface PaymentsViewProps {
+  initialPayments: PaymentRow[]
+  patients: PatientRow[]
+  dentists: DentistOption[]
+}
+
+export function PaymentsView({
+  initialPayments,
+  patients,
+  dentists,
+}: PaymentsViewProps) {
+  const [payments, setPayments] = useState<PaymentRow[]>(initialPayments)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<PaymentsSortOption>('Recent')
   const [pageSize, setPageSize] = useState('10')
@@ -115,7 +127,8 @@ export function PaymentsView() {
       <AddPaymentDialog
         open={addOpen}
         onOpenChange={setAddOpen}
-        payments={payments}
+        patients={patients}
+        dentists={dentists}
         onAdd={handleAddPayment}
       />
     </>

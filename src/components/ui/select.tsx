@@ -44,11 +44,19 @@ function SelectContent({
   >) {
   return (
     <SelectPrimitive.Portal>
-      <SelectPrimitive.Positioner align={align} sideOffset={sideOffset}>
+      {/* The Positioner is the actual `position: fixed` box (it shares one
+          portal root with Dialog/etc.), so z-index has to go here, not on
+          the Popup — a z-index two levels deeper never escapes this
+          element's own stacking context to compete with DialogContent's. */}
+      <SelectPrimitive.Positioner
+        className="z-[60]"
+        align={align}
+        sideOffset={sideOffset}
+      >
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(
-            'z-50 min-w-[var(--anchor-width)] origin-[var(--transform-origin)] rounded-lg border bg-popover p-1 text-popover-foreground shadow-md transition-[opacity,transform] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+            'min-w-[var(--anchor-width)] origin-[var(--transform-origin)] rounded-lg border bg-popover p-1 text-popover-foreground shadow-md transition-[opacity,transform] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
             className,
           )}
           {...props}

@@ -1,3 +1,8 @@
+// Used only by the patient detail page's mock medical-records data
+// (src/components/patients/details/data.ts), which has no backing schema
+// yet and is out of scope for the Supabase wiring pass — the real
+// Appointments/Payments dialogs use DentistOption from
+// @/lib/data/dentists instead.
 export interface Dentist {
   id: string
   name: string

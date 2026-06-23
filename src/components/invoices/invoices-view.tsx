@@ -11,12 +11,18 @@ import {
   InvoicesToolbar,
   type InvoicesSortOption,
 } from '@/components/invoices/invoices-toolbar'
-import { INVOICES, type InvoiceRow } from '@/components/invoices/data'
+import { type InvoiceRow } from '@/components/invoices/data'
+import type { PatientRow } from '@/components/patients/data'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
-export function InvoicesView() {
-  const [invoices, setInvoices] = useState<InvoiceRow[]>(INVOICES)
+interface InvoicesViewProps {
+  initialInvoices: InvoiceRow[]
+  patients: PatientRow[]
+}
+
+export function InvoicesView({ initialInvoices, patients }: InvoicesViewProps) {
+  const [invoices, setInvoices] = useState<InvoiceRow[]>(initialInvoices)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<InvoicesSortOption>('Recent')
   const [pageSize, setPageSize] = useState('10')
@@ -117,7 +123,7 @@ export function InvoicesView() {
       <AddInvoiceDialog
         open={addOpen}
         onOpenChange={setAddOpen}
-        invoices={invoices}
+        patients={patients}
         onAdd={handleAddInvoice}
       />
     </>

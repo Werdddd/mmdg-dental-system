@@ -19,19 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { PatientFields } from '@/components/shared/patient-fields'
-import { DENTISTS } from '@/components/shared/clinic-roster'
+import { PatientPicker } from '@/components/shared/patient-picker'
+import { DentistPicker } from '@/components/shared/dentist-picker'
 import type {
   AppointmentMode,
   AppointmentRow,
   AppointmentStatus,
 } from '@/components/appointments/data'
-import {
-  formatDisplayDate,
-  formatDisplayTime,
-  initialsOf,
-  nextSequentialId,
-} from '@/lib/utils'
+import type { PatientRow } from '@/components/patients/data'
+import type { DentistOption } from '@/lib/data/dentists'
+import { addAppointmentAction } from '@/app/(app)/appointments/actions'
 
 const MODES: AppointmentMode[] = ['In-person', 'Video Call', 'Phone Call']
 const STATUSES: AppointmentStatus[] = [
@@ -45,64 +42,69 @@ const STATUSES: AppointmentStatus[] = [
 interface AddAppointmentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  appointments: AppointmentRow[]
+  patients: PatientRow[]
+  dentists: DentistOption[]
   onAdd: (appointment: AppointmentRow) => void
 }
 
 export function AddAppointmentDialog({
   open,
   onOpenChange,
-  appointments,
+  patients,
+  dentists,
   onAdd,
 }: AddAppointmentDialogProps) {
-  const [patientName, setPatientName] = useState('')
-  const [patientPhone, setPatientPhone] = useState('')
-  const [dentistId, setDentistId] = useState(DENTISTS[0]?.id ?? '')
+  const [patientId, setPatientId] = useState('')
+  const [dentistId, setDentistId] = useState(dentists[0]?.id ?? '')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [mode, setMode] = useState<AppointmentMode>('In-person')
   const [status, setStatus] = useState<AppointmentStatus>('Confirmed')
+  const [notes, setNotes] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function resetForm() {
-    setPatientName('')
-    setPatientPhone('')
-    setDentistId(DENTISTS[0]?.id ?? '')
+    setPatientId('')
+    setDentistId(dentists[0]?.id ?? '')
     setDate('')
     setTime('')
     setMode('In-person')
     setStatus('Confirmed')
+    setNotes('')
+    setError(null)
   }
 
-  const dentist = DENTISTS.find((d) => d.id === dentistId)
   const canSubmit =
-    patientName.trim().length > 0 &&
-    patientPhone.trim().length > 0 &&
-    dentist != null &&
+    patientId.length > 0 &&
+    dentistId.length > 0 &&
     date.length > 0 &&
-    time.length > 0
+    time.length > 0 &&
+    !isSubmitting
 
-  function handleSubmit() {
-    if (!canSubmit || !dentist) return
+  async function handleSubmit() {
+    if (!canSubmit) return
 
-    onAdd({
-      id: nextSequentialId(appointments, (a) => a.id, 'apt-'),
-      date: formatDisplayDate(date),
-      time: formatDisplayTime(time),
-      patient: {
-        name: patientName.trim(),
-        initials: initialsOf(patientName),
-        phone: patientPhone.trim(),
-      },
-      dentist: {
-        name: dentist.name,
-        initials: dentist.initials,
-        specialty: dentist.specialty,
-      },
-      mode,
-      status,
-    })
-    resetForm()
-    onOpenChange(false)
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const appointment = await addAppointmentAction({
+        patientId,
+        dentistId,
+        date,
+        time,
+        mode,
+        status,
+        notes: notes.trim(),
+      })
+      onAdd(appointment)
+      resetForm()
+      onOpenChange(false)
+    } catch {
+      setError('Could not add appointment. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -122,31 +124,17 @@ export function AddAppointmentDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <PatientFields
-            name={patientName}
-            onNameChange={setPatientName}
-            phone={patientPhone}
-            onPhoneChange={setPatientPhone}
+          <PatientPicker
+            patients={patients}
+            value={patientId}
+            onValueChange={setPatientId}
           />
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">Dentist</label>
-            <Select
-              value={dentistId}
-              onValueChange={(value) => value && setDentistId(value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {DENTISTS.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.name} — {d.specialty}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <DentistPicker
+            dentists={dentists}
+            value={dentistId}
+            onValueChange={setDentistId}
+          />
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -209,6 +197,23 @@ export function AddAppointmentDialog({
               </Select>
             </div>
           </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">
+              Reason / Notes
+            </label>
+            <Input
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="Routine Cleaning"
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
         </div>
 
         <DialogFooter>
@@ -216,7 +221,7 @@ export function AddAppointmentDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
-            Add Appointment
+            {isSubmitting ? 'Adding…' : 'Add Appointment'}
           </Button>
         </DialogFooter>
       </DialogContent>

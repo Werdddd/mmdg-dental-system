@@ -1,11 +1,10 @@
-import { MOCK_TODAY } from '@/lib/utils'
-
 export interface PatientRow {
   id: string
   name: string
   initials: string
   age: number
   gender: 'Male' | 'Female'
+  phone: string
   lastAppointment: string
   lastAppointmentReason: string
   address: string
@@ -21,6 +20,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'MS',
     age: 34,
     gender: 'Female',
+    phone: '+63 912 345 6781',
     lastAppointment: 'Jun 21, 2026',
     lastAppointmentReason: 'Routine Cleaning',
     address: 'Quezon City, Metro Manila',
@@ -34,6 +34,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'JC',
     age: 41,
     gender: 'Male',
+    phone: '+63 917 222 4456',
     lastAppointment: 'Jun 21, 2026',
     lastAppointmentReason: 'Root Canal Follow-up',
     address: 'Makati City, Metro Manila',
@@ -47,6 +48,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'LF',
     age: 29,
     gender: 'Female',
+    phone: '+63 905 671 2390',
     lastAppointment: 'Jun 21, 2026',
     lastAppointmentReason: 'Tooth Extraction',
     address: 'Pasig City, Metro Manila',
@@ -60,6 +62,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'NB',
     age: 8,
     gender: 'Male',
+    phone: '+63 918 044 7723',
     lastAppointment: 'Jun 22, 2026',
     lastAppointmentReason: 'Dental Checkup',
     address: 'Taguig City, Metro Manila',
@@ -73,6 +76,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'AL',
     age: 19,
     gender: 'Female',
+    phone: '+63 933 110 8845',
     lastAppointment: 'Jun 22, 2026',
     lastAppointmentReason: 'Braces Adjustment',
     address: 'Mandaluyong City, Metro Manila',
@@ -86,6 +90,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'MT',
     age: 52,
     gender: 'Male',
+    phone: '+63 922 384 1190',
     lastAppointment: 'Jun 23, 2026',
     lastAppointmentReason: 'Consultation',
     address: 'Manila, Metro Manila',
@@ -99,6 +104,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'CR',
     age: 27,
     gender: 'Female',
+    phone: '+63 906 552 9981',
     lastAppointment: 'Jun 23, 2026',
     lastAppointmentReason: 'Teeth Whitening',
     address: 'San Juan City, Metro Manila',
@@ -112,6 +118,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'PM',
     age: 45,
     gender: 'Male',
+    phone: '+63 919 773 2204',
     lastAppointment: 'Jun 24, 2026',
     lastAppointmentReason: 'Dental Implant Review',
     address: 'Cebu City, Cebu',
@@ -125,6 +132,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'GV',
     age: 36,
     gender: 'Female',
+    phone: '+63 947 661 3328',
     lastAppointment: 'Jun 24, 2026',
     lastAppointmentReason: 'Routine Cleaning',
     address: 'Davao City, Davao del Sur',
@@ -138,6 +146,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'DR',
     age: 31,
     gender: 'Male',
+    phone: '+63 928 514 7762',
     lastAppointment: 'Jun 24, 2026',
     lastAppointmentReason: 'Cavity Filling',
     address: 'Pasay City, Metro Manila',
@@ -151,6 +160,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'SG',
     age: 6,
     gender: 'Female',
+    phone: '+63 915 330 6647',
     lastAppointment: 'Jun 25, 2026',
     lastAppointmentReason: 'Pediatric Checkup',
     address: 'Antipolo City, Rizal',
@@ -164,6 +174,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'MT',
     age: 58,
     gender: 'Male',
+    phone: '+63 939 882 1056',
     lastAppointment: 'Jun 25, 2026',
     lastAppointmentReason: 'Gum Treatment',
     address: 'Quezon City, Metro Manila',
@@ -177,6 +188,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'IC',
     age: 23,
     gender: 'Female',
+    phone: '+63 917 446 9923',
     lastAppointment: 'Jun 25, 2026',
     lastAppointmentReason: 'Wisdom Tooth Consultation',
     address: 'Makati City, Metro Manila',
@@ -190,6 +202,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'RS',
     age: 39,
     gender: 'Male',
+    phone: '+63 906 271 5510',
     lastAppointment: 'Jun 26, 2026',
     lastAppointmentReason: 'Braces Adjustment',
     address: 'Iloilo City, Iloilo',
@@ -203,6 +216,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'CA',
     age: 33,
     gender: 'Female',
+    phone: '+63 922 905 3387',
     lastAppointment: 'Jun 26, 2026',
     lastAppointmentReason: 'Tooth Extraction',
     address: 'Baguio City, Benguet',
@@ -216,6 +230,7 @@ export const PATIENTS: PatientRow[] = [
     initials: 'JL',
     age: 47,
     gender: 'Male',
+    phone: '+63 933 661 4471',
     lastAppointment: 'Jun 26, 2026',
     lastAppointmentReason: 'Routine Cleaning',
     address: 'Mandaluyong City, Metro Manila',
@@ -225,37 +240,43 @@ export const PATIENTS: PatientRow[] = [
   },
 ]
 
-const REFERENCE_DATE = new Date(MOCK_TODAY)
-
-function isThisMonth(dateStr: string) {
-  const parsed = new Date(dateStr)
-  return (
-    parsed.getMonth() === REFERENCE_DATE.getMonth() &&
-    parsed.getFullYear() === REFERENCE_DATE.getFullYear()
-  )
-}
-
-function isWithinNextDays(monthDay: string, days: number) {
-  const parsed = new Date(`${monthDay}, ${REFERENCE_DATE.getFullYear()}`)
-  if (parsed < REFERENCE_DATE) {
-    parsed.setFullYear(parsed.getFullYear() + 1)
-  }
-  const diffDays =
-    (parsed.getTime() - REFERENCE_DATE.getTime()) / (1000 * 60 * 60 * 24)
-  return diffDays <= days
-}
-
+// Patient detail page (src/app/(app)/patients/[id]) still runs entirely on
+// this mock array — its dental chart/medical records have no backing
+// schema yet, so getPatientById intentionally stays mock-based.
 export function getPatientById(id: string) {
   return PATIENTS.find((patient) => patient.id === id)
 }
 
+function isThisMonth(dateStr: string, referenceDate: Date) {
+  const parsed = new Date(dateStr)
+  return (
+    parsed.getMonth() === referenceDate.getMonth() &&
+    parsed.getFullYear() === referenceDate.getFullYear()
+  )
+}
+
+function isWithinNextDays(monthDay: string, days: number, referenceDate: Date) {
+  const parsed = new Date(`${monthDay}, ${referenceDate.getFullYear()}`)
+  if (parsed < referenceDate) {
+    parsed.setFullYear(parsed.getFullYear() + 1)
+  }
+  const diffDays =
+    (parsed.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24)
+  return diffDays <= days
+}
+
 export function computePatientsSummary(patients: PatientRow[]) {
+  const referenceDate = new Date()
+
   return {
     totalPatients: patients.length,
-    newThisMonth: patients.filter((p) => isThisMonth(p.registeredDate)).length,
+    newThisMonth: patients.filter((p) =>
+      isThisMonth(p.registeredDate, referenceDate),
+    ).length,
     activeTreatments: patients.filter((p) => p.treatmentStatus === 'Active')
       .length,
-    upcomingBirthdays: patients.filter((p) => isWithinNextDays(p.birthday, 30))
-      .length,
+    upcomingBirthdays: patients.filter((p) =>
+      isWithinNextDays(p.birthday, 30, referenceDate),
+    ).length,
   }
 }

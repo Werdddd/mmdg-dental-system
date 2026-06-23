@@ -19,14 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { PatientFields } from '@/components/shared/patient-fields'
-import { DENTISTS, TREATMENTS } from '@/components/shared/clinic-roster'
+import { PatientPicker } from '@/components/shared/patient-picker'
+import { DentistPicker } from '@/components/shared/dentist-picker'
+import { TREATMENTS } from '@/components/shared/clinic-roster'
 import type {
   PaymentMethod,
   PaymentRow,
   PaymentStatus,
 } from '@/components/payments/data'
-import { formatDisplayDate, initialsOf, nextSequentialId } from '@/lib/utils'
+import type { PatientRow } from '@/components/patients/data'
+import type { DentistOption } from '@/lib/data/dentists'
+import { addPaymentAction } from '@/app/(app)/payments/actions'
 
 const METHODS: PaymentMethod[] = ['Cash', 'Card', 'Bank', 'GCash', 'Maya']
 const STATUSES: PaymentStatus[] = [
@@ -39,67 +42,70 @@ const STATUSES: PaymentStatus[] = [
 interface AddPaymentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  payments: PaymentRow[]
+  patients: PatientRow[]
+  dentists: DentistOption[]
   onAdd: (payment: PaymentRow) => void
 }
 
 export function AddPaymentDialog({
   open,
   onOpenChange,
-  payments,
+  patients,
+  dentists,
   onAdd,
 }: AddPaymentDialogProps) {
-  const [patientName, setPatientName] = useState('')
-  const [patientPhone, setPatientPhone] = useState('')
-  const [invoiceId, setInvoiceId] = useState('')
+  const [patientId, setPatientId] = useState('')
   const [service, setService] = useState<string>(TREATMENTS[0])
-  const [dentistId, setDentistId] = useState(DENTISTS[0]?.id ?? '')
+  const [dentistId, setDentistId] = useState(dentists[0]?.id ?? '')
   const [date, setDate] = useState('')
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState<PaymentMethod>('Cash')
   const [status, setStatus] = useState<PaymentStatus>('Paid')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function resetForm() {
-    setPatientName('')
-    setPatientPhone('')
-    setInvoiceId('')
+    setPatientId('')
     setService(TREATMENTS[0])
-    setDentistId(DENTISTS[0]?.id ?? '')
+    setDentistId(dentists[0]?.id ?? '')
     setDate('')
     setAmount('')
     setMethod('Cash')
     setStatus('Paid')
+    setError(null)
   }
 
-  const dentist = DENTISTS.find((d) => d.id === dentistId)
   const canSubmit =
-    patientName.trim().length > 0 &&
-    patientPhone.trim().length > 0 &&
-    dentist != null &&
+    patientId.length > 0 &&
+    dentistId.length > 0 &&
     date.length > 0 &&
     amount.trim().length > 0 &&
-    Number(amount) > 0
+    Number(amount) > 0 &&
+    !isSubmitting
 
-  function handleSubmit() {
-    if (!canSubmit || !dentist) return
+  async function handleSubmit() {
+    if (!canSubmit) return
 
-    onAdd({
-      id: nextSequentialId(payments, (p) => p.id, 'PAY-'),
-      invoiceId: invoiceId.trim() || '—',
-      patient: {
-        name: patientName.trim(),
-        initials: initialsOf(patientName),
-        phone: patientPhone.trim(),
-      },
-      service,
-      dentist: dentist.name,
-      date: formatDisplayDate(date),
-      amount: Number(amount),
-      method,
-      status,
-    })
-    resetForm()
-    onOpenChange(false)
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const payment = await addPaymentAction({
+        patientId,
+        dentistId,
+        treatment: service,
+        date,
+        amount: Number(amount),
+        method,
+        status,
+      })
+      onAdd(payment)
+      resetForm()
+      onOpenChange(false)
+    } catch {
+      setError('Could not add payment. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -117,64 +123,38 @@ export function AddPaymentDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <PatientFields
-            name={patientName}
-            onNameChange={setPatientName}
-            phone={patientPhone}
-            onPhoneChange={setPatientPhone}
+          <PatientPicker
+            patients={patients}
+            value={patientId}
+            onValueChange={setPatientId}
           />
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Invoice ID
-              </label>
-              <Input
-                value={invoiceId}
-                onChange={(event) => setInvoiceId(event.target.value)}
-                placeholder="INV-2055"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Service/Treatment
-              </label>
-              <Select
-                value={service}
-                onValueChange={(value) => value && setService(value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TREATMENTS.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Dentist</label>
+            <label className="mb-1.5 block text-sm font-medium">
+              Service/Treatment
+            </label>
             <Select
-              value={dentistId}
-              onValueChange={(value) => value && setDentistId(value)}
+              value={service}
+              onValueChange={(value) => value && setService(value)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {DENTISTS.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.name} — {d.specialty}
+                {TREATMENTS.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
+          <DentistPicker
+            dentists={dentists}
+            value={dentistId}
+            onValueChange={setDentistId}
+          />
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -245,6 +225,12 @@ export function AddPaymentDialog({
               </Select>
             </div>
           </div>
+
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
         </div>
 
         <DialogFooter>
@@ -252,7 +238,7 @@ export function AddPaymentDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
-            Add Payment
+            {isSubmitting ? 'Adding…' : 'Add Payment'}
           </Button>
         </DialogFooter>
       </DialogContent>

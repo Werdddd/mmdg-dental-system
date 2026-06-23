@@ -55,15 +55,3 @@ export function initialsOf(fullName: string) {
     .join('')
     .toUpperCase()
 }
-
-export function nextSequentialId<T>(
-  records: T[],
-  getId: (record: T) => string,
-  prefix: string,
-) {
-  const max = records.reduce((acc, record) => {
-    const num = Number(getId(record).replace(prefix, ''))
-    return Number.isFinite(num) ? Math.max(acc, num) : acc
-  }, 0)
-  return `${prefix}${max + 1}`
-}

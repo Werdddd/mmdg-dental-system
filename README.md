@@ -36,16 +36,19 @@ The dental clinic management system of Mendez Multispecialty Dental Group.
 
 ## Authentication
 
-Accounts are provisioned by an Admin or SuperAdmin — there is no public signup page. To create the first SuperAdmin, call the Supabase Admin API with the service role key (e.g. from a one-off script or the SQL editor's `auth.users` admin functions), setting `user_metadata`:
+Accounts are provisioned by an Admin or SuperAdmin — there is no public signup page, and **the Supabase Dashboard's "Add user" dialog will not work**: the `handle_new_user` trigger needs `role`/`clinic_id` in `user_metadata` at the moment the user is created (it runs in the same transaction as the `auth.users` insert), but the Dashboard has no way to set `user_metadata` at creation time. Any user created there fails a check constraint immediately and never actually gets created.
 
-```json
-{
-  "full_name": "Jane Doe",
-  "role": "superadmin"
-}
+Use the bundled script instead:
+
+```bash
+npm run create-user -- --email=jane@mmdg.com --password=secret123 \
+  --full-name="Jane Doe" --role=dentist --clinic="Default Clinic" \
+  --specialty="General Dentist"
 ```
 
-Admins and Dentists need a `clinic_id` in `user_metadata` as well, pointing at a row in `clinics`. The `handle_new_user` trigger copies this metadata into `public.profiles` automatically.
+`--role` is `superadmin`, `admin`, or `dentist`. `--clinic` (required for admin/dentist) accepts an existing clinic's name or UUID — if no clinic matches that name, one is created. `--specialty` is optional, dentist-only. Sets `user_metadata` correctly via the Supabase Admin API. Requires `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` (see `.env.example`; get it from Supabase Dashboard > Project Settings > API — never commit it).
+
+The `handle_new_user` trigger copies that metadata into `public.profiles` automatically.
 
 Roles:
 
