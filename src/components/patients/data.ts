@@ -245,6 +245,10 @@ function isWithinNextDays(monthDay: string, days: number) {
   return diffDays <= days
 }
 
+export function getPatientById(id: string) {
+  return PATIENTS.find((patient) => patient.id === id)
+}
+
 export function computePatientsSummary(patients: PatientRow[]) {
   return {
     totalPatients: patients.length,

@@ -1,3 +1,6 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
 import { CalendarDays, MapPin, MoreVertical } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -16,24 +19,36 @@ interface PatientCardProps {
 }
 
 export function PatientCard({ patient, view }: PatientCardProps) {
+  const router = useRouter()
   const isList = view === 'list'
 
   return (
     <div
+      role="link"
+      tabIndex={0}
+      onClick={() => router.push(`/patients/${patient.id}`)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') router.push(`/patients/${patient.id}`)
+      }}
       className={cn(
-        'relative rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md',
+        'relative cursor-pointer rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md',
         isList && 'flex items-center gap-4',
       )}
     >
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label="Patient actions"
+          onClick={(event) => event.stopPropagation()}
           className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <MoreVertical className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem>View profile</DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => router.push(`/patients/${patient.id}`)}
+          >
+            View profile
+          </DropdownMenuItem>
           <DropdownMenuItem>Edit patient</DropdownMenuItem>
           <DropdownMenuItem>Schedule appointment</DropdownMenuItem>
         </DropdownMenuContent>
