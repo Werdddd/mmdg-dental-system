@@ -8,5 +8,5 @@ export default async function PatientsPage() {
   const supabase = await createClient()
   const patients = await getPatients(supabase, clinicId)
 
-  return <PatientsView initialPatients={patients} />
+  return <PatientsView key={clinicId} initialPatients={patients} />
 }

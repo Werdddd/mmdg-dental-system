@@ -16,6 +16,7 @@ export default async function AppointmentsPage() {
 
   return (
     <AppointmentsView
+      key={clinicId}
       initialAppointments={appointments}
       patients={patients}
       dentists={dentists}

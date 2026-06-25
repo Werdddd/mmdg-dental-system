@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
+import { ClinicSelector } from '@/components/layout/clinic-selector'
+import { useClinicContext } from '@/components/layout/clinic-context'
 import { AddPatientDialog } from '@/components/patients/add-patient-dialog'
 import { PatientsSummaryCards } from '@/components/patients/patients-summary-cards'
 import {
@@ -21,6 +23,7 @@ interface PatientsViewProps {
 }
 
 export function PatientsView({ initialPatients }: PatientsViewProps) {
+  const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
   const [patients, setPatients] = useState<PatientRow[]>(initialPatients)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<PatientsSortOption>('Recent')
@@ -81,9 +84,14 @@ export function PatientsView({ initialPatients }: PatientsViewProps) {
   return (
     <>
       <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Patients</h1>
-          <Badge variant="purple">{patients.length} total patients</Badge>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight">Patients</h1>
+            <Badge variant="purple">{patients.length} total patients</Badge>
+          </div>
+          {isSuperAdmin && activeClinicId && clinics.length > 0 && (
+            <ClinicSelector clinics={clinics} activeClinicId={activeClinicId} />
+          )}
         </div>
         <p className="text-muted-foreground">
           Browse and manage every patient registered at your clinic.

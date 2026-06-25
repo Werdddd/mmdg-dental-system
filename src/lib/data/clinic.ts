@@ -1,11 +1,10 @@
+import { cookies } from 'next/headers'
+
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentProfile } from '@/lib/auth/profile'
 
-// Resolves which clinic the current page should operate on. Admins and
-// Dentists always have a clinic_id. Superadmins don't (enforced by the
-// profiles_role_clinic_check constraint), so — with no clinic-switcher UI
-// yet — they fall back to the first clinic in the system, creating a
-// default one if none exists.
+export const ACTIVE_CLINIC_COOKIE = 'sa_active_clinic'
+
 export async function getActiveClinicId(): Promise<string> {
   const profile = await getCurrentProfile()
 
@@ -13,12 +12,27 @@ export async function getActiveClinicId(): Promise<string> {
     throw new Error('No authenticated profile found.')
   }
 
+  // Admin / Dentist: their clinic is fixed by their profile
   if (profile.clinic_id) {
     return profile.clinic_id
   }
 
+  // SuperAdmin: check for a cookie-persisted selection
+  const cookieStore = await cookies()
+  const cookieClinicId = cookieStore.get(ACTIVE_CLINIC_COOKIE)?.value
+
   const supabase = await createClient()
 
+  if (cookieClinicId) {
+    const { data } = await supabase
+      .from('clinics')
+      .select('id')
+      .eq('id', cookieClinicId)
+      .maybeSingle()
+    if (data) return data.id
+  }
+
+  // Fallback: first clinic in the system
   const { data: existing, error: selectError } = await supabase
     .from('clinics')
     .select('id')
@@ -29,6 +43,7 @@ export async function getActiveClinicId(): Promise<string> {
   if (selectError) throw selectError
   if (existing) return existing.id
 
+  // Last resort: create a default clinic
   const { data: created, error: insertError } = await supabase
     .from('clinics')
     .insert({ name: 'Default Clinic' })

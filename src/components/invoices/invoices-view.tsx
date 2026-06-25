@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
+import { ClinicSelector } from '@/components/layout/clinic-selector'
+import { useClinicContext } from '@/components/layout/clinic-context'
 import { AddInvoiceDialog } from '@/components/invoices/add-invoice-dialog'
 import { InvoicesSummaryCards } from '@/components/invoices/invoices-summary-cards'
 import { InvoicesTable } from '@/components/invoices/invoices-table'
@@ -22,6 +24,7 @@ interface InvoicesViewProps {
 }
 
 export function InvoicesView({ initialInvoices, patients }: InvoicesViewProps) {
+  const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
   const [invoices, setInvoices] = useState<InvoiceRow[]>(initialInvoices)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<InvoicesSortOption>('Recent')
@@ -87,9 +90,14 @@ export function InvoicesView({ initialInvoices, patients }: InvoicesViewProps) {
   return (
     <>
       <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
-          <Badge variant="purple">{invoices.length} total invoices</Badge>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
+            <Badge variant="purple">{invoices.length} total invoices</Badge>
+          </div>
+          {isSuperAdmin && activeClinicId && clinics.length > 0 && (
+            <ClinicSelector clinics={clinics} activeClinicId={activeClinicId} />
+          )}
         </div>
         <p className="text-muted-foreground">
           Manage billing, due dates, and outstanding balances per patient.

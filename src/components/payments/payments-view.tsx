@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
+import { ClinicSelector } from '@/components/layout/clinic-selector'
+import { useClinicContext } from '@/components/layout/clinic-context'
 import { AddPaymentDialog } from '@/components/payments/add-payment-dialog'
 import { PaymentsSummaryCards } from '@/components/payments/payments-summary-cards'
 import { PaymentsTable } from '@/components/payments/payments-table'
@@ -28,6 +30,7 @@ export function PaymentsView({
   patients,
   dentists,
 }: PaymentsViewProps) {
+  const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
   const [payments, setPayments] = useState<PaymentRow[]>(initialPayments)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<PaymentsSortOption>('Recent')
@@ -91,9 +94,14 @@ export function PaymentsView({
   return (
     <>
       <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Payments</h1>
-          <Badge variant="purple">{payments.length} total payments</Badge>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight">Payments</h1>
+            <Badge variant="purple">{payments.length} total payments</Badge>
+          </div>
+          {isSuperAdmin && activeClinicId && clinics.length > 0 && (
+            <ClinicSelector clinics={clinics} activeClinicId={activeClinicId} />
+          )}
         </div>
         <p className="text-muted-foreground">
           Track patient payments, methods, and outstanding balances.

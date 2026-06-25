@@ -4,19 +4,35 @@ import { useState, type ReactNode } from 'react'
 
 import { Sidebar } from '@/components/layout/sidebar'
 import { TopNavbar } from '@/components/layout/top-navbar'
+import { ClinicProvider } from '@/components/layout/clinic-context'
+import type { ClinicRecord } from '@/lib/data/clinics'
 
-export function MainLayout({ children }: { children: ReactNode }) {
+interface MainLayoutProps {
+  children: ReactNode
+  clinics?: ClinicRecord[]
+  activeClinicId?: string | null
+  isSuperAdmin?: boolean
+}
+
+export function MainLayout({
+  children,
+  clinics = [],
+  activeClinicId = null,
+  isSuperAdmin = false,
+}: MainLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <div className="min-h-svh bg-muted/30">
-      <Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
+    <ClinicProvider value={{ clinics, activeClinicId, isSuperAdmin }}>
+      <div className="min-h-svh bg-muted/30">
+        <Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
 
-      <div className="flex min-h-svh flex-col lg:pl-64">
-        <TopNavbar onMenuClick={() => setMobileOpen(true)} />
+        <div className="flex min-h-svh flex-col lg:pl-64">
+          <TopNavbar onMenuClick={() => setMobileOpen(true)} />
 
-        <main className="flex-1 space-y-6 p-4 sm:p-6">{children}</main>
+          <main className="flex-1 space-y-6 p-4 sm:p-6">{children}</main>
+        </div>
       </div>
-    </div>
+    </ClinicProvider>
   )
 }

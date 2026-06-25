@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
+import { ClinicSelector } from '@/components/layout/clinic-selector'
+import { useClinicContext } from '@/components/layout/clinic-context'
 import { AddAppointmentDialog } from '@/components/appointments/add-appointment-dialog'
 import { AppointmentDetailsDialog } from '@/components/appointments/appointment-details-dialog'
 import { AppointmentsSummaryCards } from '@/components/appointments/appointments-summary-cards'
@@ -29,6 +31,7 @@ export function AppointmentsView({
   patients,
   dentists,
 }: AppointmentsViewProps) {
+  const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
   const [appointments, setAppointments] =
     useState<AppointmentRow[]>(initialAppointments)
   const [search, setSearch] = useState('')
@@ -97,13 +100,18 @@ export function AppointmentsView({
   return (
     <>
       <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Appointments
-          </h1>
-          <Badge variant="purple">
-            {appointments.length} total appointments
-          </Badge>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Appointments
+            </h1>
+            <Badge variant="purple">
+              {appointments.length} total appointments
+            </Badge>
+          </div>
+          {isSuperAdmin && activeClinicId && clinics.length > 0 && (
+            <ClinicSelector clinics={clinics} activeClinicId={activeClinicId} />
+          )}
         </div>
         <p className="text-muted-foreground">
           Manage upcoming, ongoing, and past patient appointments.

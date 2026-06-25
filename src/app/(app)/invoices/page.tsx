@@ -12,5 +12,11 @@ export default async function InvoicesPage() {
     getPatients(supabase, clinicId),
   ])
 
-  return <InvoicesView initialInvoices={invoices} patients={patients} />
+  return (
+    <InvoicesView
+      key={clinicId}
+      initialInvoices={invoices}
+      patients={patients}
+    />
+  )
 }

@@ -16,6 +16,7 @@ export default async function PaymentsPage() {
 
   return (
     <PaymentsView
+      key={clinicId}
       initialPayments={payments}
       patients={patients}
       dentists={dentists}
