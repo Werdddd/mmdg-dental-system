@@ -71,6 +71,36 @@ export async function getAppointments(
   )
 }
 
+export async function getTodayAppointments(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+): Promise<AppointmentRow[]> {
+  const now = new Date()
+  const startOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).toISOString()
+  const endOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1,
+  ).toISOString()
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(SELECT)
+    .eq('clinic_id', clinicId)
+    .gte('scheduled_at', startOfDay)
+    .lt('scheduled_at', endOfDay)
+    .order('scheduled_at', { ascending: true })
+
+  if (error) throw error
+  return ((data ?? []) as unknown as AppointmentQueryRow[]).map(
+    mapAppointmentRow,
+  )
+}
+
 export async function getPatientAppointments(
   supabase: SupabaseServerClient,
   clinicId: string,

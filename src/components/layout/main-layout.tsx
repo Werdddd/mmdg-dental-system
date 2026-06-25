@@ -6,12 +6,18 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { TopNavbar } from '@/components/layout/top-navbar'
 import { ClinicProvider } from '@/components/layout/clinic-context'
 import type { ClinicRecord } from '@/lib/data/clinics'
+import type { AppointmentRow } from '@/components/appointments/data'
+import type { UserRole } from '@/lib/auth/types'
 
 interface MainLayoutProps {
   children: ReactNode
   clinics?: ClinicRecord[]
   activeClinicId?: string | null
   isSuperAdmin?: boolean
+  profileName?: string
+  profileRole?: UserRole
+  profileSpecialty?: string | null
+  todayAppointments?: AppointmentRow[]
 }
 
 export function MainLayout({
@@ -19,6 +25,10 @@ export function MainLayout({
   clinics = [],
   activeClinicId = null,
   isSuperAdmin = false,
+  profileName = '',
+  profileRole = 'dentist',
+  profileSpecialty = null,
+  todayAppointments = [],
 }: MainLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -28,7 +38,13 @@ export function MainLayout({
         <Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
 
         <div className="flex min-h-svh flex-col lg:pl-64">
-          <TopNavbar onMenuClick={() => setMobileOpen(true)} />
+          <TopNavbar
+            onMenuClick={() => setMobileOpen(true)}
+            profileName={profileName}
+            profileRole={profileRole}
+            profileSpecialty={profileSpecialty}
+            todayAppointments={todayAppointments}
+          />
 
           <main className="flex-1 space-y-6 p-4 sm:p-6">{children}</main>
         </div>
