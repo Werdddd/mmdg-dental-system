@@ -1,8 +1,9 @@
-import { MOCK_TODAY } from '@/lib/utils'
+import { MOCK_TODAY, formatDisplayDate, formatDisplayTime } from '@/lib/utils'
 import type { PatientRow } from '@/components/patients/data'
 import { DENTISTS } from '@/components/shared/clinic-roster'
 import type { PaymentMethod } from '@/components/payments/data'
 import type { InvoiceStatus } from '@/components/invoices/data'
+import type { PatientAppointmentData } from '@/lib/data/appointments'
 
 function hashSeed(value: string) {
   let hash = 0
@@ -39,8 +40,13 @@ function shiftDate(value: string, days: number) {
 }
 
 export function formatPatientCode(id: string) {
-  const num = Number(id.replace('pat-', '')) || 0
-  return `PT-${String(num).padStart(4, '0')}`
+  if (id.startsWith('pat-')) {
+    const num = Number(id.replace('pat-', '')) || 0
+    return `PT-${String(num).padStart(4, '0')}`
+  }
+  // UUID: derive a stable 4-digit number from the id hash
+  const num = (hashSeed(id) % 9000) + 1000
+  return `PT-${num}`
 }
 
 /* ---------- Adult tooth chart (Universal Numbering System) ---------- */
@@ -395,33 +401,24 @@ export function getPatientProfile(patient: PatientRow): PatientProfile {
   const primaryDentist = pickFrom(rand, DENTISTS).name
 
   const birthYear = REFERENCE_YEAR - patient.age
-  const surname = patient.name.trim().split(/\s+/).slice(-1)[0]
-  const emergencyFirstName = pickFrom(rand, EMERGENCY_FIRST_NAMES)
   const isMinor = patient.age < 18
-
-  const emailHandle = patient.name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z\s]/g, '')
-    .split(/\s+/)
-    .join('.')
 
   return {
     patientCode: formatPatientCode(patient.id),
     primaryDentist,
     about: {
-      dateOfBirth: `${patient.birthday}, ${birthYear}`,
+      dateOfBirth: patient.birthday !== '—' ? `${patient.birthday}, ${birthYear}` : '—',
       age: patient.age,
       gender: patient.gender,
-      nationality: pickFrom(rand, NATIONALITIES),
-      civilStatus: isMinor ? 'Single' : pickFrom(rand, CIVIL_STATUSES),
-      bloodType: pickFrom(rand, BLOOD_TYPES),
-      contactNumber: formatPhone(rand),
-      email: `${emailHandle}@${pickFrom(rand, EMAIL_DOMAINS)}`,
+      nationality: '—',
+      civilStatus: isMinor ? 'Single' : '—',
+      bloodType: '—',
+      contactNumber: patient.phone || '—',
+      email: '—',
       emergencyContact: {
-        name: `${emergencyFirstName} ${surname}`,
-        relation: isMinor ? 'Parent' : pickFrom(rand, EMERGENCY_RELATIONS),
-        phone: formatPhone(rand),
+        name: '—',
+        relation: '—',
+        phone: '—',
       },
     },
     chiefComplaint: {
@@ -537,6 +534,33 @@ export function getDentalHistory(patient: PatientRow): DentalHistoryEntry[] {
   }
 
   return entries
+}
+
+export function appointmentsToDentalHistory(
+  patientId: string,
+  appointments: PatientAppointmentData[],
+): DentalHistoryEntry[] {
+  return appointments.map((appt, i) => {
+    const scheduled = new Date(appt.scheduledAt)
+    const hh = String(scheduled.getHours()).padStart(2, '0')
+    const mm = String(scheduled.getMinutes()).padStart(2, '0')
+
+    let status: DentalHistoryEntry['status']
+    if (appt.status === 'Completed') status = 'Completed'
+    else if (appt.status === 'Cancelled' || appt.status === 'Rescheduled') status = 'Cancelled'
+    else status = 'Ongoing'
+
+    return {
+      id: `${patientId}-appt-${i}`,
+      date: formatDisplayDate(appt.scheduledAt.slice(0, 10)),
+      time: formatDisplayTime(`${hh}:${mm}`),
+      procedure: appt.notes || 'General Visit',
+      toothArea: '—',
+      diagnosis: '—',
+      dentist: appt.dentistName,
+      status,
+    }
+  })
 }
 
 /* ---------- Payment history ---------- */

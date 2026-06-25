@@ -6,6 +6,14 @@ import type {
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, formatDisplayTime, initialsOf } from '@/lib/utils'
 
+export interface PatientAppointmentData {
+  id: string
+  scheduledAt: string
+  notes: string | null
+  status: AppointmentStatus
+  dentistName: string
+}
+
 interface AppointmentQueryRow {
   id: string
   scheduled_at: string
@@ -60,6 +68,35 @@ export async function getAppointments(
   return ((data ?? []) as unknown as AppointmentQueryRow[]).map(
     mapAppointmentRow,
   )
+}
+
+export async function getPatientAppointments(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  patientId: string,
+): Promise<PatientAppointmentData[]> {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('id, scheduled_at, notes, status, dentist:profiles ( full_name )')
+    .eq('clinic_id', clinicId)
+    .eq('patient_id', patientId)
+    .order('scheduled_at', { ascending: false })
+
+  if (error) throw error
+
+  return ((data ?? []) as unknown as {
+    id: string
+    scheduled_at: string
+    notes: string | null
+    status: AppointmentStatus
+    dentist: { full_name: string | null } | null
+  }[]).map((row) => ({
+    id: row.id,
+    scheduledAt: row.scheduled_at,
+    notes: row.notes,
+    status: row.status,
+    dentistName: row.dentist?.full_name ?? 'Unassigned',
+  }))
 }
 
 export interface NewAppointmentInput {

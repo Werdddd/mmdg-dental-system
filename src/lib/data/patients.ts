@@ -76,6 +76,25 @@ export interface NewPatientInput {
   address: string
 }
 
+export async function getPatientById(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  patientId: string,
+): Promise<PatientRow | null> {
+  const { data, error } = await supabase
+    .from('patients')
+    .select(SELECT)
+    .eq('clinic_id', clinicId)
+    .eq('id', patientId)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw error
+  }
+  return mapPatientRow(data as unknown as PatientQueryRow)
+}
+
 export async function createPatient(
   supabase: SupabaseServerClient,
   clinicId: string,

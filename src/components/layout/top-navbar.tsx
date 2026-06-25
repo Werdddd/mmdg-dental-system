@@ -3,12 +3,17 @@ import { Bell, Menu, Search, Settings } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 
-export function TopNavbar() {
+interface TopNavbarProps {
+  onMenuClick: () => void
+}
+
+export function TopNavbar({ onMenuClick }: TopNavbarProps) {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card/95 px-4 backdrop-blur supports-backdrop-filter:bg-card/75 sm:px-6">
       <button
         type="button"
         aria-label="Open menu"
+        onClick={onMenuClick}
         className="-ml-1 flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
       >
         <Menu className="size-5" />

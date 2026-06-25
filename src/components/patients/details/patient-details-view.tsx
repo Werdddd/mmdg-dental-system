@@ -6,11 +6,12 @@ import { ArrowLeft } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { PatientRow } from '@/components/patients/data'
+import type { PatientAppointmentData } from '@/lib/data/appointments'
 import {
   getDentalChart,
-  getDentalHistory,
   getPatientProfile,
   getPaymentHistory,
+  appointmentsToDentalHistory,
 } from '@/components/patients/details/data'
 import { PatientHeaderCard } from '@/components/patients/details/patient-header-card'
 import { PatientAboutCard } from '@/components/patients/details/patient-about-card'
@@ -20,11 +21,18 @@ import { MedicalRecordsTabs } from '@/components/patients/details/medical-record
 
 interface PatientDetailsViewProps {
   patient: PatientRow
+  appointments?: PatientAppointmentData[]
 }
 
-export function PatientDetailsView({ patient }: PatientDetailsViewProps) {
+export function PatientDetailsView({
+  patient,
+  appointments,
+}: PatientDetailsViewProps) {
   const profile = getPatientProfile(patient)
-  const dentalHistory = getDentalHistory(patient)
+  const dentalHistory =
+    appointments && appointments.length > 0
+      ? appointmentsToDentalHistory(patient.id, appointments)
+      : []
   const dentalChart = getDentalChart(patient)
   const paymentHistory = getPaymentHistory(patient)
 
