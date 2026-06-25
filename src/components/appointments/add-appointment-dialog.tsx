@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -45,6 +45,7 @@ interface AddAppointmentDialogProps {
   patients: PatientRow[]
   dentists: DentistOption[]
   onAdd: (appointment: AppointmentRow) => void
+  initialDate?: string // ISO date "YYYY-MM-DD" to pre-fill
 }
 
 export function AddAppointmentDialog({
@@ -53,10 +54,11 @@ export function AddAppointmentDialog({
   patients,
   dentists,
   onAdd,
+  initialDate,
 }: AddAppointmentDialogProps) {
   const [patientId, setPatientId] = useState('')
   const [dentistId, setDentistId] = useState(dentists[0]?.id ?? '')
-  const [date, setDate] = useState('')
+  const [date, setDate] = useState(initialDate ?? '')
   const [time, setTime] = useState('')
   const [mode, setMode] = useState<AppointmentMode>('In-person')
   const [status, setStatus] = useState<AppointmentStatus>('Confirmed')
@@ -64,10 +66,15 @@ export function AddAppointmentDialog({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Sync the pre-filled date whenever the dialog opens with a new initialDate
+  useEffect(() => {
+    if (open) setDate(initialDate ?? '')
+  }, [open, initialDate])
+
   function resetForm() {
     setPatientId('')
     setDentistId(dentists[0]?.id ?? '')
-    setDate('')
+    setDate(initialDate ?? '')
     setTime('')
     setMode('In-person')
     setStatus('Confirmed')

@@ -4,14 +4,15 @@ import { useState } from 'react'
 
 import { AppointmentsTable } from '@/components/appointments/appointments-table'
 import { AppointmentDetailsDialog } from '@/components/appointments/appointment-details-dialog'
-import {
-  APPOINTMENTS,
-  type AppointmentRow,
-} from '@/components/appointments/data'
+import type { AppointmentRow } from '@/components/appointments/data'
 
-const RECENT_COUNT = 9
+interface RecentAppointmentsTableProps {
+  appointments: AppointmentRow[]
+}
 
-export function RecentAppointmentsTable() {
+export function RecentAppointmentsTable({
+  appointments,
+}: RecentAppointmentsTableProps) {
   const [selected, setSelected] = useState<AppointmentRow | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
 
@@ -29,16 +30,16 @@ export function RecentAppointmentsTable() {
             Today and upcoming visits
           </p>
         </div>
-        <button
-          type="button"
+        <a
+          href="/appointments"
           className="text-sm font-medium text-primary hover:underline"
         >
           View all
-        </button>
+        </a>
       </div>
 
       <AppointmentsTable
-        appointments={APPOINTMENTS.slice(0, RECENT_COUNT)}
+        appointments={appointments}
         onRowClick={handleRowClick}
         containerClassName="min-h-0 flex-1 overflow-y-auto"
         stickyHeader

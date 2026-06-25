@@ -11,6 +11,7 @@ export type AppointmentMode = 'In-person' | 'Video Call' | 'Phone Call'
 
 export interface AppointmentRow {
   id: string
+  scheduledAt: string // ISO 8601 e.g. "2026-06-21T09:00:00.000Z"
   date: string
   time: string
   patient: { name: string; initials: string; phone: string }
@@ -22,6 +23,7 @@ export interface AppointmentRow {
 export const APPOINTMENTS: AppointmentRow[] = [
   {
     id: 'apt-1',
+    scheduledAt: '2026-06-21T09:00:00.000Z',
     date: 'Jun 21, 2026',
     time: '9:00 AM',
     patient: {
@@ -39,6 +41,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-2',
+    scheduledAt: '2026-06-21T10:30:00.000Z',
     date: 'Jun 21, 2026',
     time: '10:30 AM',
     patient: { name: 'James Cruz', initials: 'JC', phone: '+63 917 222 4456' },
@@ -52,6 +55,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-3',
+    scheduledAt: '2026-06-21T13:15:00.000Z',
     date: 'Jun 21, 2026',
     time: '1:15 PM',
     patient: {
@@ -69,6 +73,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-4',
+    scheduledAt: '2026-06-22T11:00:00.000Z',
     date: 'Jun 22, 2026',
     time: '11:00 AM',
     patient: {
@@ -86,6 +91,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-5',
+    scheduledAt: '2026-06-22T15:30:00.000Z',
     date: 'Jun 22, 2026',
     time: '3:30 PM',
     patient: { name: 'Ana Lim', initials: 'AL', phone: '+63 933 110 8845' },
@@ -99,6 +105,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-6',
+    scheduledAt: '2026-06-23T09:30:00.000Z',
     date: 'Jun 23, 2026',
     time: '9:30 AM',
     patient: { name: 'Mark Tan', initials: 'MT', phone: '+63 922 384 1190' },
@@ -112,6 +119,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-7',
+    scheduledAt: '2026-06-23T14:00:00.000Z',
     date: 'Jun 23, 2026',
     time: '2:00 PM',
     patient: { name: 'Carla Reyes', initials: 'CR', phone: '+63 906 552 9981' },
@@ -125,6 +133,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-8',
+    scheduledAt: '2026-06-24T10:00:00.000Z',
     date: 'Jun 24, 2026',
     time: '10:00 AM',
     patient: {
@@ -142,6 +151,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-9',
+    scheduledAt: '2026-06-24T16:00:00.000Z',
     date: 'Jun 24, 2026',
     time: '4:00 PM',
     patient: {
@@ -159,6 +169,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-10',
+    scheduledAt: '2026-06-24T17:15:00.000Z',
     date: 'Jun 24, 2026',
     time: '5:15 PM',
     patient: { name: 'Diego Ramos', initials: 'DR', phone: '+63 928 514 7762' },
@@ -172,6 +183,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-11',
+    scheduledAt: '2026-06-25T09:00:00.000Z',
     date: 'Jun 25, 2026',
     time: '9:00 AM',
     patient: {
@@ -189,6 +201,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-12',
+    scheduledAt: '2026-06-25T11:30:00.000Z',
     date: 'Jun 25, 2026',
     time: '11:30 AM',
     patient: {
@@ -206,6 +219,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-13',
+    scheduledAt: '2026-06-25T13:45:00.000Z',
     date: 'Jun 25, 2026',
     time: '1:45 PM',
     patient: { name: 'Isabel Cruz', initials: 'IC', phone: '+63 917 446 9923' },
@@ -219,6 +233,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-14',
+    scheduledAt: '2026-06-26T09:15:00.000Z',
     date: 'Jun 26, 2026',
     time: '9:15 AM',
     patient: {
@@ -236,6 +251,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-15',
+    scheduledAt: '2026-06-26T10:45:00.000Z',
     date: 'Jun 26, 2026',
     time: '10:45 AM',
     patient: {
@@ -253,6 +269,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-16',
+    scheduledAt: '2026-06-26T14:30:00.000Z',
     date: 'Jun 26, 2026',
     time: '2:30 PM',
     patient: { name: 'Joshua Lim', initials: 'JL', phone: '+63 933 661 4471' },
@@ -266,6 +283,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-17',
+    scheduledAt: '2026-06-27T09:00:00.000Z',
     date: 'Jun 27, 2026',
     time: '9:00 AM',
     patient: {
@@ -283,6 +301,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-18',
+    scheduledAt: '2026-06-27T11:15:00.000Z',
     date: 'Jun 27, 2026',
     time: '11:15 AM',
     patient: {
@@ -300,6 +319,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-19',
+    scheduledAt: '2026-06-27T15:00:00.000Z',
     date: 'Jun 27, 2026',
     time: '3:00 PM',
     patient: {
@@ -317,6 +337,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-20',
+    scheduledAt: '2026-06-28T09:30:00.000Z',
     date: 'Jun 28, 2026',
     time: '9:30 AM',
     patient: { name: 'Leo Domingo', initials: 'LD', phone: '+63 928 660 1147' },
@@ -330,6 +351,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-21',
+    scheduledAt: '2026-06-28T13:00:00.000Z',
     date: 'Jun 28, 2026',
     time: '1:00 PM',
     patient: {
@@ -347,6 +369,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-22',
+    scheduledAt: '2026-06-28T16:30:00.000Z',
     date: 'Jun 28, 2026',
     time: '4:30 PM',
     patient: {
@@ -364,6 +387,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-23',
+    scheduledAt: '2026-06-29T10:00:00.000Z',
     date: 'Jun 29, 2026',
     time: '10:00 AM',
     patient: {
@@ -381,6 +405,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-24',
+    scheduledAt: '2026-06-29T14:15:00.000Z',
     date: 'Jun 29, 2026',
     time: '2:15 PM',
     patient: {
@@ -398,6 +423,7 @@ export const APPOINTMENTS: AppointmentRow[] = [
   },
   {
     id: 'apt-25',
+    scheduledAt: '2026-06-29T16:45:00.000Z',
     date: 'Jun 29, 2026',
     time: '4:45 PM',
     patient: {

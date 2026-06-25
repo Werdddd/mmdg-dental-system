@@ -37,6 +37,7 @@ function mapAppointmentRow(row: AppointmentQueryRow): AppointmentRow {
 
   return {
     id: row.id,
+    scheduledAt: row.scheduled_at,
     date: formatDisplayDate(row.scheduled_at.slice(0, 10)),
     time: formatDisplayTime(`${hh}:${mm}`),
     patient: {
