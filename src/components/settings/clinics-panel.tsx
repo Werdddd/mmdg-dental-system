@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Building2, MoreHorizontal, Plus } from 'lucide-react'
 
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -29,47 +30,52 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { Clinic } from '@/components/settings/clinics-data'
-import { ALLOWED_USERS } from '@/components/settings/users-data'
+import type { ClinicRecord } from '@/lib/data/clinics'
+import type { StaffUser } from '@/lib/data/staff'
+import { addClinicAction, deleteClinicAction } from '@/app/(app)/settings/actions'
 
 interface ClinicsPanelProps {
-  clinics: Clinic[]
-  onClinicsChange: (clinics: Clinic[]) => void
+  clinics: ClinicRecord[]
+  staff: StaffUser[]
 }
 
-export function ClinicsPanel({ clinics, onClinicsChange }: ClinicsPanelProps) {
+export function ClinicsPanel({ clinics, staff }: ClinicsPanelProps) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
-  const [address, setAddress] = useState('')
-  const [phone, setPhone] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
+
+  function staffCount(clinicId: string) {
+    return staff.filter((u) => u.clinicId === clinicId).length
+  }
 
   function resetForm() {
     setName('')
-    setAddress('')
-    setPhone('')
+    setFormError(null)
   }
 
-  function handleAddClinic() {
-    if (!name.trim() || !address.trim()) return
-    onClinicsChange([
-      ...clinics,
-      {
-        id: `clinic-${Date.now()}`,
-        name: name.trim(),
-        address: address.trim(),
-        phone: phone.trim(),
-      },
-    ])
-    resetForm()
-    setOpen(false)
+  function handleAdd() {
+    if (!name.trim()) return
+    setFormError(null)
+    startTransition(async () => {
+      const result = await addClinicAction(name.trim())
+      if (result.error) {
+        setFormError(result.error)
+        return
+      }
+      resetForm()
+      setOpen(false)
+      router.refresh()
+    })
   }
 
-  function handleRemoveClinic(id: string) {
-    onClinicsChange(clinics.filter((clinic) => clinic.id !== id))
-  }
-
-  function staffCount(clinicId: string) {
-    return ALLOWED_USERS.filter((user) => user.clinicId === clinicId).length
+  function handleRemove(id: string) {
+    startTransition(async () => {
+      const result = await deleteClinicAction(id)
+      if (result.error) alert(result.error)
+      else router.refresh()
+    })
   }
 
   return (
@@ -97,7 +103,7 @@ export function ClinicsPanel({ clinics, onClinicsChange }: ClinicsPanelProps) {
             <DialogHeader>
               <DialogTitle>Add Clinic</DialogTitle>
               <DialogDescription>
-                Add a new clinic branch staff can be assigned to.
+                Add a new clinic branch. Staff can then be assigned to it.
               </DialogDescription>
             </DialogHeader>
 
@@ -108,30 +114,14 @@ export function ClinicsPanel({ clinics, onClinicsChange }: ClinicsPanelProps) {
                 </label>
                 <Input
                   value={name}
-                  onChange={(event) => setName(event.target.value)}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. MMDG Dental — Pasig"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                 />
               </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">
-                  Address
-                </label>
-                <Input
-                  value={address}
-                  onChange={(event) => setAddress(event.target.value)}
-                  placeholder="Street, City, Province"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">
-                  Phone
-                </label>
-                <Input
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                  placeholder="+63 2 8000 0000"
-                />
-              </div>
+              {formError && (
+                <p className="text-sm text-destructive">{formError}</p>
+              )}
             </div>
 
             <DialogFooter>
@@ -139,10 +129,10 @@ export function ClinicsPanel({ clinics, onClinicsChange }: ClinicsPanelProps) {
                 Cancel
               </Button>
               <Button
-                onClick={handleAddClinic}
-                disabled={!name.trim() || !address.trim()}
+                onClick={handleAdd}
+                disabled={!name.trim() || isPending}
               >
-                Add Clinic
+                {isPending ? 'Adding…' : 'Add Clinic'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -154,8 +144,6 @@ export function ClinicsPanel({ clinics, onClinicsChange }: ClinicsPanelProps) {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>Clinic</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead>Phone</TableHead>
               <TableHead>Staff</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
@@ -164,7 +152,7 @@ export function ClinicsPanel({ clinics, onClinicsChange }: ClinicsPanelProps) {
           </TableHeader>
           <TableBody>
             {clinics.length === 0 && (
-              <TableEmpty colSpan={5}>
+              <TableEmpty colSpan={3}>
                 No clinics yet. Add your first clinic to get started.
               </TableEmpty>
             )}
@@ -180,12 +168,6 @@ export function ClinicsPanel({ clinics, onClinicsChange }: ClinicsPanelProps) {
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {clinic.address}
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-muted-foreground">
-                  {clinic.phone}
-                </TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">
                   {staffCount(clinic.id)} staff
                 </TableCell>
@@ -198,10 +180,9 @@ export function ClinicsPanel({ clinics, onClinicsChange }: ClinicsPanelProps) {
                       <MoreHorizontal className="size-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem>Edit clinic</DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive data-[highlighted]:text-destructive"
-                        onClick={() => handleRemoveClinic(clinic.id)}
+                        onClick={() => handleRemove(clinic.id)}
                       >
                         Remove clinic
                       </DropdownMenuItem>

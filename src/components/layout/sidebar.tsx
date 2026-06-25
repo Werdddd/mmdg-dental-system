@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { signOut } from '@/app/login/actions'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
@@ -106,10 +107,15 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         <div className="border-t p-3">
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
-            <LogOut className="size-4" />
-            Logout
-          </div>
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <LogOut className="size-4" />
+              Logout
+            </button>
+          </form>
         </div>
       </aside>
     </>
