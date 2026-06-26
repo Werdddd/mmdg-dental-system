@@ -211,12 +211,26 @@ export function CalendarCard({
       </table>
 
       {/* Day appointments panel */}
-      <div className="mt-3 min-h-0 flex-1 overflow-y-auto border-t pt-3">
+      <div
+        className={cn(
+          'mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border-t pt-3 transition-colors',
+          selectedDate === todayIso && 'border-t-0 bg-primary/5 px-3 pt-3 ring-1 ring-primary/20',
+        )}
+      >
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="truncate text-sm font-semibold">
-              {formatHeading(selectedDate)}
-            </h3>
+            <div className="flex items-center gap-1.5">
+              {selectedDate === todayIso && (
+                <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                  Today
+                </span>
+              )}
+              <h3 className="truncate text-sm font-semibold">
+                {selectedDate === todayIso
+                  ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+                  : formatHeading(selectedDate)}
+              </h3>
+            </div>
             <p className="text-xs text-muted-foreground">
               {dayAppointments.length === 0
                 ? 'No appointments'
@@ -240,7 +254,14 @@ export function CalendarCard({
         ) : (
           <ul className="mt-3 space-y-2.5">
             {dayAppointments.map((appt) => (
-              <li key={appt.id} className="flex items-center gap-2.5">
+              <li
+                key={appt.id}
+                className={cn(
+                  'flex items-center gap-2.5',
+                  selectedDate === todayIso &&
+                    'rounded-md bg-card px-2 py-1.5 shadow-sm',
+                )}
+              >
                 <span
                   className={cn(
                     'mt-0.5 size-1.5 shrink-0 rounded-full',
