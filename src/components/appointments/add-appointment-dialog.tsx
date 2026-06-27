@@ -12,30 +12,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input' // used for date/time fields
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { PatientPicker } from '@/components/shared/patient-picker'
 import { DentistPicker } from '@/components/shared/dentist-picker'
-import type {
-  AppointmentRow,
-  AppointmentStatus,
-} from '@/components/appointments/data'
+import type { AppointmentRow, AppointmentStatus } from '@/components/appointments/data'
 import type { PatientRow } from '@/components/patients/data'
 import type { DentistOption } from '@/lib/data/dentists'
 import { addAppointmentAction } from '@/app/(app)/appointments/actions'
-
-const STATUSES: AppointmentStatus[] = [
-  'Confirmed',
-  'Ongoing',
-  'Completed',
-  'Cancelled',
-  'Rescheduled',
-]
 
 interface AddAppointmentDialogProps {
   open: boolean
@@ -58,7 +40,7 @@ export function AddAppointmentDialog({
   const [dentistId, setDentistId] = useState(dentists[0]?.id ?? '')
   const [date, setDate] = useState(initialDate ?? '')
   const [time, setTime] = useState('')
-  const [status, setStatus] = useState<AppointmentStatus>('Confirmed')
+  const [status] = useState<AppointmentStatus>('Scheduled')
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -73,7 +55,6 @@ export function AddAppointmentDialog({
     setDentistId(dentists[0]?.id ?? '')
     setDate(initialDate ?? '')
     setTime('')
-    setStatus('Confirmed')
     setNotes('')
     setError(null)
   }
@@ -155,27 +136,6 @@ export function AddAppointmentDialog({
                 onChange={(event) => setTime(event.target.value)}
               />
             </div>
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">Status</label>
-            <Select
-              value={status}
-              onValueChange={(value) =>
-                value && setStatus(value as AppointmentStatus)
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div>

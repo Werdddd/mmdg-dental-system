@@ -16,6 +16,7 @@ export interface PatientAppointmentData {
 interface AppointmentQueryRow {
   id: string
   patient_id: string
+  dentist_id: string
   scheduled_at: string
   status: AppointmentStatus
   notes: string | null
@@ -24,7 +25,7 @@ interface AppointmentQueryRow {
 }
 
 const SELECT = `
-  id, patient_id, scheduled_at, status, notes,
+  id, patient_id, dentist_id, scheduled_at, status, notes,
   patient:patients ( full_name, phone ),
   dentist:profiles ( full_name, specialty )
 `
@@ -46,6 +47,7 @@ function mapAppointmentRow(row: AppointmentQueryRow): AppointmentRow {
       phone: row.patient?.phone ?? '',
     },
     dentist: {
+      id: row.dentist_id,
       name: row.dentist?.full_name ?? 'Unassigned',
       initials: initialsOf(row.dentist?.full_name ?? '??'),
       specialty: row.dentist?.specialty ?? 'General Dentist',

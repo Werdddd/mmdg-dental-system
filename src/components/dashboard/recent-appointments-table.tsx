@@ -23,10 +23,11 @@ export function RecentAppointmentsTable({
     setDetailsOpen(true)
   }
 
-  function handleStatusChanged(updated: AppointmentRow) {
-    setAppointments((prev) =>
-      prev.map((a) => (a.id === updated.id ? updated : a)),
-    )
+  function handleStatusChanged(updated: AppointmentRow, newAppointment?: AppointmentRow) {
+    setAppointments((prev) => {
+      const replaced = prev.map((a) => (a.id === updated.id ? updated : a))
+      return newAppointment ? [newAppointment, ...replaced] : replaced
+    })
     setSelected(updated)
   }
 

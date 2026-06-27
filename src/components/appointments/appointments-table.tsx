@@ -1,7 +1,6 @@
 import { MoreHorizontal } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { type badgeVariants } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,22 +17,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { StatusBadge } from '@/components/shared/status-badge'
-import type { VariantProps } from 'class-variance-authority'
-import type {
-  AppointmentRow,
-  AppointmentStatus,
-} from '@/components/appointments/data'
-
-const STATUS_VARIANT: Record<
-  AppointmentStatus,
-  VariantProps<typeof badgeVariants>['variant']
-> = {
-  Confirmed: 'purple',
-  Completed: 'success',
-  Ongoing: 'warning',
-  Cancelled: 'destructive',
-  Rescheduled: 'info',
-}
+import type { AppointmentRow } from '@/components/appointments/data'
+import { STATUS_VARIANT } from '@/components/appointments/data'
 
 interface AppointmentsTableProps {
   appointments: AppointmentRow[]

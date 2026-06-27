@@ -32,7 +32,7 @@ export function AppointmentsSummaryCards({
         label="Upcoming Appointments"
         value={String(summary.upcomingCount)}
         icon={CalendarClock}
-        helperText="confirmed or rescheduled"
+        helperText="not yet started"
       />
       <StatCard
         label="Completed Appointments"
@@ -41,10 +41,10 @@ export function AppointmentsSummaryCards({
         helperText="this period"
       />
       <StatCard
-        label="Cancelled Appointments"
+        label="Cancelled / No Show"
         value={String(summary.cancelledCount)}
         icon={XCircle}
-        helperText="this period"
+        helperText="cancelled or no-show"
       />
     </div>
   )
