@@ -11,14 +11,23 @@ interface RecentAppointmentsTableProps {
 }
 
 export function RecentAppointmentsTable({
-  appointments,
+  appointments: initialAppointments,
 }: RecentAppointmentsTableProps) {
+  const [appointments, setAppointments] =
+    useState<AppointmentRow[]>(initialAppointments)
   const [selected, setSelected] = useState<AppointmentRow | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
 
   function handleRowClick(appointment: AppointmentRow) {
     setSelected(appointment)
     setDetailsOpen(true)
+  }
+
+  function handleStatusChanged(updated: AppointmentRow) {
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === updated.id ? updated : a)),
+    )
+    setSelected(updated)
   }
 
   return (
@@ -49,6 +58,8 @@ export function RecentAppointmentsTable({
         appointment={selected}
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
+        allAppointments={appointments}
+        onStatusChanged={handleStatusChanged}
       />
     </div>
   )

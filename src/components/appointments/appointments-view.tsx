@@ -97,6 +97,13 @@ export function AppointmentsView({
     setDetailsOpen(true)
   }
 
+  function handleStatusChanged(updated: AppointmentRow) {
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === updated.id ? updated : a)),
+    )
+    setSelectedAppointment(updated)
+  }
+
   return (
     <>
       <div>
@@ -154,6 +161,8 @@ export function AppointmentsView({
         appointment={selectedAppointment}
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
+        allAppointments={appointments}
+        onStatusChanged={handleStatusChanged}
       />
     </>
   )

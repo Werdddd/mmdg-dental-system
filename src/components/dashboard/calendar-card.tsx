@@ -6,6 +6,7 @@ import { CalendarPlus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { AddAppointmentDialog } from '@/components/appointments/add-appointment-dialog'
+import { AppointmentDetailsDialog } from '@/components/appointments/appointment-details-dialog'
 import type {
   AppointmentRow,
   AppointmentStatus,
@@ -76,6 +77,8 @@ export function CalendarCard({
   const [viewMonth, setViewMonth] = useState(now.getMonth())
   const [selectedDate, setSelectedDate] = useState<string>(todayIso)
   const [addOpen, setAddOpen] = useState(false)
+  const [detailsAppt, setDetailsAppt] = useState<AppointmentRow | null>(null)
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   // Local appointments — updated optimistically when a new one is added
   const [appointments, setAppointments] = useState(initialAppointments)
@@ -132,6 +135,18 @@ export function CalendarCard({
     setAppointments((prev) => [appt, ...prev])
     setAddOpen(false)
     onAppointmentAdded?.(appt)
+  }
+
+  function handleApptClick(appt: AppointmentRow) {
+    setDetailsAppt(appt)
+    setDetailsOpen(true)
+  }
+
+  function handleStatusChanged(updated: AppointmentRow) {
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === updated.id ? updated : a)),
+    )
+    setDetailsAppt(updated)
   }
 
   return (
@@ -256,10 +271,10 @@ export function CalendarCard({
             {dayAppointments.map((appt) => (
               <li
                 key={appt.id}
+                onClick={() => handleApptClick(appt)}
                 className={cn(
-                  'flex items-center gap-2.5',
-                  selectedDate === todayIso &&
-                    'rounded-md bg-card px-2 py-1.5 shadow-sm',
+                  'flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/60',
+                  selectedDate === todayIso && 'bg-card shadow-sm hover:bg-muted/40',
                 )}
               >
                 <span
@@ -292,6 +307,14 @@ export function CalendarCard({
         dentists={dentists}
         initialDate={selectedDate}
         onAdd={handleAppointmentAdded}
+      />
+
+      <AppointmentDetailsDialog
+        appointment={detailsAppt}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        allAppointments={appointments}
+        onStatusChanged={handleStatusChanged}
       />
     </div>
   )

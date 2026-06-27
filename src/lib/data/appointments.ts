@@ -1,5 +1,4 @@
 import type {
-  AppointmentMode,
   AppointmentRow,
   AppointmentStatus,
 } from '@/components/appointments/data'
@@ -16,8 +15,8 @@ export interface PatientAppointmentData {
 
 interface AppointmentQueryRow {
   id: string
+  patient_id: string
   scheduled_at: string
-  mode: AppointmentMode
   status: AppointmentStatus
   notes: string | null
   patient: { full_name: string; phone: string | null } | null
@@ -25,7 +24,7 @@ interface AppointmentQueryRow {
 }
 
 const SELECT = `
-  id, scheduled_at, mode, status, notes,
+  id, patient_id, scheduled_at, status, notes,
   patient:patients ( full_name, phone ),
   dentist:profiles ( full_name, specialty )
 `
@@ -41,6 +40,7 @@ function mapAppointmentRow(row: AppointmentQueryRow): AppointmentRow {
     date: formatDisplayDate(row.scheduled_at.slice(0, 10)),
     time: formatDisplayTime(`${hh}:${mm}`),
     patient: {
+      id: row.patient_id,
       name: row.patient?.full_name ?? 'Unknown Patient',
       initials: initialsOf(row.patient?.full_name ?? '??'),
       phone: row.patient?.phone ?? '',
@@ -50,7 +50,7 @@ function mapAppointmentRow(row: AppointmentQueryRow): AppointmentRow {
       initials: initialsOf(row.dentist?.full_name ?? '??'),
       specialty: row.dentist?.specialty ?? 'General Dentist',
     },
-    mode: row.mode,
+    notes: row.notes ?? '',
     status: row.status,
   }
 }
@@ -135,9 +135,8 @@ export interface NewAppointmentInput {
   dentistId: string
   date: string
   time: string
-  mode: AppointmentMode
   status: AppointmentStatus
-  notes: string
+  notes: string // treatment plan / treatment done
 }
 
 export async function createAppointment(
@@ -154,7 +153,7 @@ export async function createAppointment(
       patient_id: input.patientId,
       dentist_id: input.dentistId,
       scheduled_at: scheduledAt,
-      mode: input.mode,
+      mode: 'In-person', // kept in DB but hidden from UI
       status: input.status,
       notes: input.notes || null,
     })
@@ -163,4 +162,23 @@ export async function createAppointment(
 
   if (error) throw error
   return mapAppointmentRow(data as unknown as AppointmentQueryRow)
+}
+
+export async function updateAppointmentStatus(
+  supabase: SupabaseServerClient,
+  appointmentId: string,
+  status: AppointmentStatus,
+  notes?: string,
+): Promise<void> {
+  const updateData: Record<string, unknown> = { status }
+  if (notes !== undefined) {
+    updateData.notes = notes || null
+  }
+
+  const { error } = await supabase
+    .from('appointments')
+    .update(updateData)
+    .eq('id', appointmentId)
+
+  if (error) throw error
 }

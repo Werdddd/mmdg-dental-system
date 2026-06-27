@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { Input } from '@/components/ui/input' // used for date/time fields
 import {
   Select,
   SelectContent,
@@ -22,7 +22,6 @@ import {
 import { PatientPicker } from '@/components/shared/patient-picker'
 import { DentistPicker } from '@/components/shared/dentist-picker'
 import type {
-  AppointmentMode,
   AppointmentRow,
   AppointmentStatus,
 } from '@/components/appointments/data'
@@ -30,7 +29,6 @@ import type { PatientRow } from '@/components/patients/data'
 import type { DentistOption } from '@/lib/data/dentists'
 import { addAppointmentAction } from '@/app/(app)/appointments/actions'
 
-const MODES: AppointmentMode[] = ['In-person', 'Video Call', 'Phone Call']
 const STATUSES: AppointmentStatus[] = [
   'Confirmed',
   'Ongoing',
@@ -60,7 +58,6 @@ export function AddAppointmentDialog({
   const [dentistId, setDentistId] = useState(dentists[0]?.id ?? '')
   const [date, setDate] = useState(initialDate ?? '')
   const [time, setTime] = useState('')
-  const [mode, setMode] = useState<AppointmentMode>('In-person')
   const [status, setStatus] = useState<AppointmentStatus>('Confirmed')
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -76,7 +73,6 @@ export function AddAppointmentDialog({
     setDentistId(dentists[0]?.id ?? '')
     setDate(initialDate ?? '')
     setTime('')
-    setMode('In-person')
     setStatus('Confirmed')
     setNotes('')
     setError(null)
@@ -100,7 +96,6 @@ export function AddAppointmentDialog({
         dentistId,
         date,
         time,
-        mode,
         status,
         notes: notes.trim(),
       })
@@ -162,57 +157,40 @@ export function AddAppointmentDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Mode</label>
-              <Select
-                value={mode}
-                onValueChange={(value) =>
-                  value && setMode(value as AppointmentMode)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MODES.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Status</label>
-              <Select
-                value={status}
-                onValueChange={(value) =>
-                  value && setStatus(value as AppointmentStatus)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">Status</label>
+            <Select
+              value={status}
+              onValueChange={(value) =>
+                value && setStatus(value as AppointmentStatus)
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="mb-1.5 block text-sm font-medium">
-              Reason / Notes
+              Treatment Plan{' '}
+              <span className="font-normal text-muted-foreground">
+                (optional)
+              </span>
             </label>
-            <Input
+            <textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Routine Cleaning"
+              placeholder="e.g. Routine cleaning, root canal, braces adjustment…"
+              rows={3}
+              className="flex w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
           </div>
 

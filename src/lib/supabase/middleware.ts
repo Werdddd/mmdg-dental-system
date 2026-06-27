@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isSupabaseConfigured } from '@/lib/supabase/config'
 
-const PUBLIC_PATHS = ['/login']
+const PUBLIC_PATHS = ['/login', '/forgot-password', '/reset-password', '/auth/callback']
 
 export async function updateSession(request: NextRequest) {
   // Supabase isn't set up yet — skip auth gating entirely so the dashboard

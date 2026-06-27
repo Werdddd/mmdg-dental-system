@@ -1,4 +1,4 @@
-import { MoreHorizontal, Phone, Video, MapPin } from 'lucide-react'
+import { MoreHorizontal } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { type badgeVariants } from '@/components/ui/badge'
@@ -35,12 +35,6 @@ const STATUS_VARIANT: Record<
   Rescheduled: 'info',
 }
 
-const MODE_ICON = {
-  'In-person': MapPin,
-  'Video Call': Video,
-  'Phone Call': Phone,
-} as const
-
 interface AppointmentsTableProps {
   appointments: AppointmentRow[]
   onRowClick?: (appointment: AppointmentRow) => void
@@ -63,7 +57,7 @@ export function AppointmentsTable({
           <TableHead>Date &amp; Time</TableHead>
           <TableHead>Patient</TableHead>
           <TableHead>Dentist</TableHead>
-          <TableHead>Mode</TableHead>
+          <TableHead>Treatment Done</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>
             <span className="sr-only">Actions</span>
@@ -76,80 +70,78 @@ export function AppointmentsTable({
             No appointments match your search.
           </TableEmpty>
         )}
-        {appointments.map((appt) => {
-          const ModeIcon = MODE_ICON[appt.mode]
-          return (
-            <TableRow
-              key={appt.id}
-              className={onRowClick ? 'cursor-pointer' : undefined}
-              onClick={() => onRowClick?.(appt)}
+        {appointments.map((appt) => (
+          <TableRow
+            key={appt.id}
+            className={onRowClick ? 'cursor-pointer' : undefined}
+            onClick={() => onRowClick?.(appt)}
+          >
+            <TableCell className="whitespace-nowrap">
+              <p className="font-medium">{appt.date}</p>
+              <p className="text-xs text-muted-foreground">{appt.time}</p>
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-3">
+                <Avatar className="size-9">
+                  <AvatarFallback>{appt.patient.initials}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="font-medium whitespace-nowrap">
+                    {appt.patient.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">
+                    {appt.patient.phone}
+                  </p>
+                </div>
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-3">
+                <Avatar className="size-9">
+                  <AvatarFallback>{appt.dentist.initials}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="font-medium whitespace-nowrap">
+                    {appt.dentist.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">
+                    {appt.dentist.specialty}
+                  </p>
+                </div>
+              </div>
+            </TableCell>
+            <TableCell className="max-w-[200px]">
+              {appt.notes ? (
+                <p className="truncate text-sm text-muted-foreground">
+                  {appt.notes}
+                </p>
+              ) : (
+                <span className="text-sm text-muted-foreground/50">—</span>
+              )}
+            </TableCell>
+            <TableCell>
+              <StatusBadge status={appt.status} variants={STATUS_VARIANT} />
+            </TableCell>
+            <TableCell
+              className="text-right"
+              onClick={(event) => event.stopPropagation()}
             >
-              <TableCell className="whitespace-nowrap">
-                <p className="font-medium">{appt.date}</p>
-                <p className="text-xs text-muted-foreground">{appt.time}</p>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Avatar className="size-9">
-                    <AvatarFallback>{appt.patient.initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="font-medium whitespace-nowrap">
-                      {appt.patient.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground whitespace-nowrap">
-                      {appt.patient.phone}
-                    </p>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Avatar className="size-9">
-                    <AvatarFallback>{appt.dentist.initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="font-medium whitespace-nowrap">
-                      {appt.dentist.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground whitespace-nowrap">
-                      {appt.dentist.specialty}
-                    </p>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  <ModeIcon className="size-3.5" />
-                  {appt.mode}
-                </span>
-              </TableCell>
-              <TableCell>
-                <StatusBadge status={appt.status} variants={STATUS_VARIANT} />
-              </TableCell>
-              <TableCell
-                className="text-right"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    aria-label="Appointment actions"
-                    className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    <MoreHorizontal className="size-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => onRowClick?.(appt)}>
-                      View details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>Reschedule</DropdownMenuItem>
-                    <DropdownMenuItem>Cancel appointment</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          )
-        })}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  aria-label="Appointment actions"
+                  className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <MoreHorizontal className="size-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => onRowClick?.(appt)}>
+                    View details
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TableCell>
+          </TableRow>
+        ))}
       </TableBody>
     </Table>
   )
