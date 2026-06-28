@@ -7,6 +7,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { PatientRow } from '@/components/patients/data'
 import type { PatientAppointmentData } from '@/lib/data/appointments'
+import type { PatientNoteEntry } from '@/lib/data/patient-notes'
 import {
   getDentalChart,
   getPatientProfile,
@@ -22,11 +23,13 @@ import { MedicalRecordsTabs } from '@/components/patients/details/medical-record
 interface PatientDetailsViewProps {
   patient: PatientRow
   appointments?: PatientAppointmentData[]
+  notes?: PatientNoteEntry[]
 }
 
 export function PatientDetailsView({
   patient,
   appointments,
+  notes = [],
 }: PatientDetailsViewProps) {
   const profile = getPatientProfile(patient)
   const dentalHistory =
@@ -51,7 +54,7 @@ export function PatientDetailsView({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <PatientAboutCard about={profile.about} />
         <ChiefComplaintCard complaint={profile.chiefComplaint} />
-        <PatientNotesCard notes={profile.notes} />
+        <PatientNotesCard patientId={patient.id} notes={notes} />
       </div>
 
       <MedicalRecordsTabs

@@ -15,7 +15,6 @@ export function PatientAboutCard({ about }: PatientAboutCardProps) {
       <InfoRow label="Gender" value={about.gender} />
       <InfoRow label="Nationality" value={about.nationality} />
       <InfoRow label="Civil Status" value={about.civilStatus} />
-      <InfoRow label="Blood Type" value={about.bloodType} />
       <InfoRow label="Contact Number" value={about.contactNumber} />
       <InfoRow label="Email" value={about.email} />
       <InfoRow

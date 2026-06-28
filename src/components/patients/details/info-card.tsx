@@ -4,15 +4,24 @@ import type { ReactNode } from 'react'
 interface InfoCardProps {
   title: string
   icon?: LucideIcon
+  action?: ReactNode
   children: ReactNode
 }
 
-export function InfoCard({ title, icon: Icon, children }: InfoCardProps) {
+export function InfoCard({
+  title,
+  icon: Icon,
+  action,
+  children,
+}: InfoCardProps) {
   return (
     <div className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center gap-2">
-        {Icon && <Icon className="size-4 text-primary" />}
-        <h2 className="text-base font-semibold">{title}</h2>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {Icon && <Icon className="size-4 text-primary" />}
+          <h2 className="text-base font-semibold">{title}</h2>
+        </div>
+        {action}
       </div>
       <div className="space-y-3">{children}</div>
     </div>

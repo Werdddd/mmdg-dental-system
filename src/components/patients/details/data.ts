@@ -1,5 +1,9 @@
-import { MOCK_TODAY, formatDisplayDate, formatDisplayTime } from '@/lib/utils'
-import type { PatientRow } from '@/components/patients/data'
+import { formatDisplayDate, formatDisplayTime } from '@/lib/utils'
+import type {
+  PatientRow,
+  EmergencyContact,
+  ChiefComplaint,
+} from '@/components/patients/data'
 import { DENTISTS } from '@/components/shared/clinic-roster'
 import type { PaymentMethod } from '@/components/payments/data'
 import type { InvoiceStatus } from '@/components/invoices/data'
@@ -314,11 +318,7 @@ function getVisitProfile(reason: string) {
 
 /* ---------- About / contact / emergency contact ---------- */
 
-export interface EmergencyContact {
-  name: string
-  relation: string
-  phone: string
-}
+export type { EmergencyContact, ChiefComplaint }
 
 export interface PatientAbout {
   dateOfBirth: string
@@ -326,111 +326,45 @@ export interface PatientAbout {
   gender: PatientRow['gender']
   nationality: string
   civilStatus: string
-  bloodType: string
   contactNumber: string
   email: string
   emergencyContact: EmergencyContact
 }
 
-export interface ChiefComplaint {
-  primaryComplaint: string
-  symptoms: string
-  affectedArea: string
-  remarks: string
-}
-
-export interface PatientNotes {
-  dentistNotes: string
-  treatmentReminders: string
-  followUpInstructions: string
-}
-
 export interface PatientProfile {
   patientCode: string
-  primaryDentist: string
   about: PatientAbout
   chiefComplaint: ChiefComplaint
-  notes: PatientNotes
 }
 
-const NATIONALITIES = [
-  'Filipino',
-  'Filipino',
-  'Filipino',
-  'Filipino-Chinese',
-  'Filipino-American',
-]
-const CIVIL_STATUSES = ['Single', 'Married', 'Widowed', 'Separated']
-const BLOOD_TYPES = ['O+', 'A+', 'B+', 'AB+', 'O-', 'A-', 'B-', 'AB-']
-const EMERGENCY_RELATIONS = [
-  'Spouse',
-  'Parent',
-  'Sibling',
-  'Child',
-  'Guardian',
-  'Friend',
-]
-const EMERGENCY_FIRST_NAMES = [
-  'Antonio',
-  'Rosa',
-  'Eduardo',
-  'Teresa',
-  'Manuel',
-  'Carmen',
-  'Ricardo',
-  'Luisa',
-  'Fernando',
-  'Beatriz',
-  'Gabriel',
-  'Victoria',
-]
-const EMAIL_DOMAINS = ['gmail.com', 'yahoo.com', 'outlook.com']
-
-function formatPhone(rand: () => number) {
-  const a = pickInt(rand, 900, 999)
-  const b = pickInt(rand, 100, 999)
-  const c = pickInt(rand, 1000, 9999)
-  return `+63 ${a} ${b} ${c}`
+function fallback(value: string) {
+  return value.trim().length > 0 ? value : '—'
 }
-
-const REFERENCE_YEAR = new Date(MOCK_TODAY).getFullYear()
 
 export function getPatientProfile(patient: PatientRow): PatientProfile {
-  const rand = createRandom(`${patient.id}-profile`)
-  const profile = getVisitProfile(patient.lastAppointmentReason)
-  const primaryDentist = pickFrom(rand, DENTISTS).name
-
-  const birthYear = REFERENCE_YEAR - patient.age
-  const isMinor = patient.age < 18
-
   return {
     patientCode: formatPatientCode(patient.id),
-    primaryDentist,
     about: {
-      dateOfBirth: patient.birthday !== '—' ? `${patient.birthday}, ${birthYear}` : '—',
+      dateOfBirth: patient.birthdayIso
+        ? formatDisplayDate(patient.birthdayIso)
+        : '—',
       age: patient.age,
       gender: patient.gender,
-      nationality: '—',
-      civilStatus: isMinor ? 'Single' : '—',
-      bloodType: '—',
-      contactNumber: patient.phone || '—',
-      email: '—',
+      nationality: fallback(patient.nationality),
+      civilStatus: fallback(patient.civilStatus),
+      contactNumber: fallback(patient.phone),
+      email: fallback(patient.email),
       emergencyContact: {
-        name: '—',
-        relation: '—',
-        phone: '—',
+        name: fallback(patient.emergencyContact.name),
+        relation: fallback(patient.emergencyContact.relation),
+        phone: fallback(patient.emergencyContact.phone),
       },
     },
     chiefComplaint: {
-      primaryComplaint: profile.complaint,
-      symptoms: profile.symptoms,
-      affectedArea: profile.area,
-      remarks: profile.remarks,
-    },
-    notes: {
-      dentistNotes: `${primaryDentist}: ${profile.dentistNote}`,
-      treatmentReminders: profile.reminder,
-      followUpInstructions: profile.followUp,
+      primaryComplaint: fallback(patient.chiefComplaint.primaryComplaint),
+      symptoms: fallback(patient.chiefComplaint.symptoms),
+      affectedArea: fallback(patient.chiefComplaint.affectedArea),
+      remarks: fallback(patient.chiefComplaint.remarks),
     },
   }
 }
@@ -547,7 +481,8 @@ export function appointmentsToDentalHistory(
 
     let status: DentalHistoryEntry['status']
     if (appt.status === 'Completed') status = 'Completed'
-    else if (appt.status === 'Cancelled' || appt.status === 'Rescheduled') status = 'Cancelled'
+    else if (appt.status === 'Cancelled' || appt.status === 'Rescheduled')
+      status = 'Cancelled'
     else status = 'Ongoing'
 
     return {

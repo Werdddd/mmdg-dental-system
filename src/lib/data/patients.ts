@@ -11,11 +11,24 @@ interface PatientQueryRow {
   phone: string | null
   treatment_status: 'Active' | 'Completed'
   created_at: string
+  email: string | null
+  nationality: string | null
+  civil_status: string | null
+  emergency_contact_name: string | null
+  emergency_contact_relation: string | null
+  emergency_contact_phone: string | null
+  chief_complaint: string | null
+  symptoms: string | null
+  affected_area: string | null
+  complaint_remarks: string | null
   appointments: { scheduled_at: string; notes: string | null }[] | null
 }
 
 const SELECT = `
   id, full_name, gender, birthday, address, phone, treatment_status, created_at,
+  email, nationality, civil_status,
+  emergency_contact_name, emergency_contact_relation, emergency_contact_phone,
+  chief_complaint, symptoms, affected_area, complaint_remarks,
   appointments ( scheduled_at, notes )
 `
 
@@ -51,6 +64,21 @@ function mapPatientRow(row: PatientQueryRow): PatientRow {
     registeredDate: formatDisplayDate(row.created_at.slice(0, 10)),
     treatmentStatus: row.treatment_status,
     birthday: row.birthday ? formatMonthDay(row.birthday) : '—',
+    birthdayIso: row.birthday ?? '',
+    email: row.email ?? '',
+    nationality: row.nationality ?? '',
+    civilStatus: row.civil_status ?? '',
+    emergencyContact: {
+      name: row.emergency_contact_name ?? '',
+      relation: row.emergency_contact_relation ?? '',
+      phone: row.emergency_contact_phone ?? '',
+    },
+    chiefComplaint: {
+      primaryComplaint: row.chief_complaint ?? '',
+      symptoms: row.symptoms ?? '',
+      affectedArea: row.affected_area ?? '',
+      remarks: row.complaint_remarks ?? '',
+    },
   }
 }
 
@@ -68,12 +96,48 @@ export async function getPatients(
   return ((data ?? []) as unknown as PatientQueryRow[]).map(mapPatientRow)
 }
 
-export interface NewPatientInput {
+export interface PatientProfileInput {
+  email?: string
+  nationality?: string
+  civilStatus?: string
+  emergencyContactName?: string
+  emergencyContactRelation?: string
+  emergencyContactPhone?: string
+  chiefComplaint?: string
+  symptoms?: string
+  affectedArea?: string
+  complaintRemarks?: string
+}
+
+export interface NewPatientInput extends PatientProfileInput {
   fullName: string
   phone: string
   gender: 'Male' | 'Female'
   birthday: string
   address: string
+}
+
+export interface UpdatePatientInput extends PatientProfileInput {
+  fullName: string
+  phone: string
+  gender: 'Male' | 'Female'
+  birthday: string
+  address: string
+}
+
+function profileColumns(input: PatientProfileInput) {
+  return {
+    email: input.email || null,
+    nationality: input.nationality || null,
+    civil_status: input.civilStatus || null,
+    emergency_contact_name: input.emergencyContactName || null,
+    emergency_contact_relation: input.emergencyContactRelation || null,
+    emergency_contact_phone: input.emergencyContactPhone || null,
+    chief_complaint: input.chiefComplaint || null,
+    symptoms: input.symptoms || null,
+    affected_area: input.affectedArea || null,
+    complaint_remarks: input.complaintRemarks || null,
+  }
 }
 
 export async function getPatientById(
@@ -109,7 +173,33 @@ export async function createPatient(
       gender: input.gender,
       birthday: input.birthday,
       address: input.address,
+      ...profileColumns(input),
     })
+    .select(SELECT)
+    .single()
+
+  if (error) throw error
+  return mapPatientRow(data as unknown as PatientQueryRow)
+}
+
+export async function updatePatient(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  patientId: string,
+  input: UpdatePatientInput,
+): Promise<PatientRow> {
+  const { data, error } = await supabase
+    .from('patients')
+    .update({
+      full_name: input.fullName,
+      phone: input.phone,
+      gender: input.gender,
+      birthday: input.birthday,
+      address: input.address,
+      ...profileColumns(input),
+    })
+    .eq('clinic_id', clinicId)
+    .eq('id', patientId)
     .select(SELECT)
     .single()
 

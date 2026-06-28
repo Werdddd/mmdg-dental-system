@@ -47,7 +47,7 @@ export default function LoginPage() {
 
           {/* Specialty pills */}
           <div className="mt-8 flex flex-wrap justify-center gap-2">
-            {['General Dentistry', 'Orthodontics', 'Oral Surgery', 'Cosmetic Care'].map(
+            {['General Dentistry', 'Orthodontics', 'Oral Surgery'].map(
               (tag) => (
                 <span
                   key={tag}

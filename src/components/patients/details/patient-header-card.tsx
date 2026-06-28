@@ -7,7 +7,7 @@ import {
   FileText,
   Mail,
   MapPin,
-  MessageCircle,
+  Pencil,
   Phone,
 } from 'lucide-react'
 
@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { PatientRow } from '@/components/patients/data'
 import type { PatientProfile } from '@/components/patients/details/data'
+import { EditPatientDialog } from '@/components/patients/details/edit-patient-dialog'
 
 interface PatientHeaderCardProps {
   patient: PatientRow
@@ -35,7 +36,7 @@ export function PatientHeaderCard({
   profile,
 }: PatientHeaderCardProps) {
   const [documentsOpen, setDocumentsOpen] = useState(false)
-  const digitsOnly = profile.about.contactNumber.replace(/\s+/g, '')
+  const [editOpen, setEditOpen] = useState(false)
 
   return (
     <div className="rounded-xl border bg-card p-6 shadow-sm">
@@ -86,20 +87,14 @@ export function PatientHeaderCard({
         </div>
 
         <div className="flex flex-wrap justify-center gap-2 lg:justify-end">
-          <a
-            href={`tel:${digitsOnly}`}
-            className={cn(buttonVariants({ variant: 'outline' }), 'gap-1.5')}
+          <Button
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => setEditOpen(true)}
           >
-            <Phone className="size-4" />
-            Call Patient
-          </a>
-          <a
-            href={`sms:${digitsOnly}`}
-            className={cn(buttonVariants({ variant: 'outline' }), 'gap-1.5')}
-          >
-            <MessageCircle className="size-4" />
-            Message Patient
-          </a>
+            <Pencil className="size-4" />
+            Edit Patient
+          </Button>
           <Button
             variant="outline"
             className="gap-1.5"
@@ -131,6 +126,12 @@ export function PatientHeaderCard({
           </div>
         </DialogContent>
       </Dialog>
+
+      <EditPatientDialog
+        patient={patient}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
     </div>
   )
 }

@@ -11,18 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import type { PatientRow } from '@/components/patients/data'
+import {
+  EMPTY_PATIENT_FORM_VALUES,
+  PatientFormFields,
+  formValuesToInput,
+  type PatientFormValues,
+} from '@/components/patients/patient-form-fields'
 import { addPatientAction } from '@/app/(app)/patients/actions'
-
-const GENDERS: PatientRow['gender'][] = ['Male', 'Female']
 
 interface AddPatientDialogProps {
   open: boolean
@@ -35,28 +31,22 @@ export function AddPatientDialog({
   onOpenChange,
   onAdd,
 }: AddPatientDialogProps) {
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [gender, setGender] = useState<PatientRow['gender']>('Female')
-  const [address, setAddress] = useState('')
-  const [birthday, setBirthday] = useState('')
+  const [values, setValues] = useState<PatientFormValues>(
+    EMPTY_PATIENT_FORM_VALUES,
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   function resetForm() {
-    setName('')
-    setPhone('')
-    setGender('Female')
-    setAddress('')
-    setBirthday('')
+    setValues(EMPTY_PATIENT_FORM_VALUES)
     setError(null)
   }
 
   const canSubmit =
-    name.trim().length > 0 &&
-    phone.trim().length > 0 &&
-    address.trim().length > 0 &&
-    birthday.length > 0 &&
+    values.fullName.trim().length > 0 &&
+    values.phone.trim().length > 0 &&
+    values.address.trim().length > 0 &&
+    values.birthday.length > 0 &&
     !isSubmitting
 
   async function handleSubmit() {
@@ -65,13 +55,7 @@ export function AddPatientDialog({
     setIsSubmitting(true)
     setError(null)
     try {
-      const patient = await addPatientAction({
-        fullName: name.trim(),
-        phone: phone.trim(),
-        gender,
-        birthday,
-        address: address.trim(),
-      })
+      const patient = await addPatientAction(formValuesToInput(values))
       onAdd(patient)
       resetForm()
       onOpenChange(false)
@@ -90,7 +74,7 @@ export function AddPatientDialog({
         if (!next) resetForm()
       }}
     >
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New Patient</DialogTitle>
           <DialogDescription>
@@ -98,75 +82,16 @@ export function AddPatientDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Full Name
-            </label>
-            <Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Juan Dela Cruz"
-            />
-          </div>
+        <PatientFormFields
+          values={values}
+          onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
+        />
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Contact Number
-              </label>
-              <Input
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                placeholder="+63 912 345 6789"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Gender</label>
-              <Select
-                value={gender}
-                onValueChange={(value) =>
-                  value && setGender(value as PatientRow['gender'])
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {GENDERS.map((g) => (
-                    <SelectItem key={g} value={g}>
-                      {g}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">Birthday</label>
-            <Input
-              type="date"
-              value={birthday}
-              onChange={(event) => setBirthday(event.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">Address</label>
-            <Input
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
-              placeholder="Quezon City, Metro Manila"
-            />
-          </div>
-
-          {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          )}
-        </div>
+        {error && (
+          <p className="mt-3 text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
