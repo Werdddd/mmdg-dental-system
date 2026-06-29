@@ -20,8 +20,13 @@ export interface PatientSponsorshipInfo {
   coverageCap: number | null
 }
 
+export function formatPatientCode(patientNumber: number) {
+  return `P-${String(patientNumber).padStart(6, '0')}`
+}
+
 export interface PatientRow {
   id: string
+  patientNumber: number
   name: string
   initials: string
   age: number

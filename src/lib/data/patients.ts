@@ -1,9 +1,14 @@
-import type { PatientRow, PatientType } from '@/components/patients/data'
+import {
+  formatPatientCode,
+  type PatientRow,
+  type PatientType,
+} from '@/components/patients/data'
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, formatMonthDay, initialsOf } from '@/lib/utils'
 
 interface PatientQueryRow {
   id: string
+  patient_number: number
   full_name: string
   gender: 'Male' | 'Female' | null
   birthday: string | null
@@ -23,17 +28,19 @@ interface PatientQueryRow {
   complaint_remarks: string | null
   patient_type: PatientType
   appointments: { scheduled_at: string; notes: string | null }[] | null
-  patient_sponsorships: {
-    sponsor_id: string
-    coverage_percentage: string | number
-    coverage_cap: string | number | null
-    valid_to: string | null
-    sponsor: { name: string } | null
-  }[] | null
+  patient_sponsorships:
+    | {
+        sponsor_id: string
+        coverage_percentage: string | number
+        coverage_cap: string | number | null
+        valid_to: string | null
+        sponsor: { name: string } | null
+      }[]
+    | null
 }
 
 const SELECT = `
-  id, full_name, gender, birthday, address, phone, treatment_status, created_at,
+  id, patient_number, full_name, gender, birthday, address, phone, treatment_status, created_at,
   email, nationality, civil_status,
   emergency_contact_name, emergency_contact_relation, emergency_contact_phone,
   chief_complaint, symptoms, affected_area, complaint_remarks, patient_type,
@@ -75,6 +82,7 @@ function mapPatientRow(row: PatientQueryRow): PatientRow {
         }
       : null,
     id: row.id,
+    patientNumber: row.patient_number,
     name: row.full_name,
     initials: initialsOf(row.full_name),
     age: row.birthday ? computeAge(row.birthday) : 0,
@@ -233,4 +241,90 @@ export async function updatePatient(
 
   if (error) throw error
   return mapPatientRow(data as unknown as PatientQueryRow)
+}
+
+export interface PatientSearchResult {
+  id: string
+  patientCode: string
+  name: string
+  initials: string
+  clinicId: string
+  clinicName: string
+}
+
+interface PatientSearchQueryRow {
+  id: string
+  patient_number: number
+  full_name: string
+  clinic: { id: string; name: string } | null
+}
+
+const SEARCH_SELECT =
+  'id, patient_number, full_name, clinic:clinics ( id, name )'
+const SEARCH_RESULT_LIMIT = 8
+
+// Accepts "P-000123", "p123", or a bare "123" and recovers the underlying
+// patient_number so the search bar can match a pasted/typed patient code.
+function parsePatientNumberQuery(query: string): number | null {
+  const match = query.match(/^p-?0*(\d+)$/i) ?? query.match(/^0*(\d+)$/)
+  if (!match) return null
+  const num = Number(match[1])
+  return Number.isFinite(num) ? num : null
+}
+
+function mapSearchRow(row: PatientSearchQueryRow): PatientSearchResult {
+  return {
+    id: row.id,
+    patientCode: formatPatientCode(row.patient_number),
+    name: row.full_name,
+    initials: initialsOf(row.full_name),
+    clinicId: row.clinic?.id ?? '',
+    clinicName: row.clinic?.name ?? 'Unknown Clinic',
+  }
+}
+
+// Scoped by RLS only (no explicit clinic_id filter): superadmins match
+// patients across every clinic so they can jump straight to the right one;
+// admins/dentists are already restricted to their own clinic by policy.
+export async function searchPatients(
+  supabase: SupabaseServerClient,
+  query: string,
+): Promise<PatientSearchResult[]> {
+  const trimmed = query.trim()
+  if (!trimmed) return []
+
+  const patientNumber = parsePatientNumberQuery(trimmed)
+
+  const [byNumber, byName] = await Promise.all([
+    patientNumber === null
+      ? Promise.resolve({ data: [], error: null })
+      : supabase
+          .from('patients')
+          .select(SEARCH_SELECT)
+          .eq('patient_number', patientNumber)
+          .limit(1),
+    supabase
+      .from('patients')
+      .select(SEARCH_SELECT)
+      .ilike('full_name', `%${trimmed}%`)
+      .order('full_name', { ascending: true })
+      .limit(SEARCH_RESULT_LIMIT),
+  ])
+
+  if (byNumber.error) throw byNumber.error
+  if (byName.error) throw byName.error
+
+  const rows = [
+    ...((byNumber.data ?? []) as unknown as PatientSearchQueryRow[]),
+    ...((byName.data ?? []) as unknown as PatientSearchQueryRow[]),
+  ]
+
+  const seen = new Set<string>()
+  const deduped = rows.filter((row) => {
+    if (seen.has(row.id)) return false
+    seen.add(row.id)
+    return true
+  })
+
+  return deduped.slice(0, SEARCH_RESULT_LIMIT).map(mapSearchRow)
 }

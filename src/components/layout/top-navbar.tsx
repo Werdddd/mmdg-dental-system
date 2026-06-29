@@ -1,18 +1,21 @@
 'use client'
 
-import { Bell, CalendarCheck, Menu, Search } from 'lucide-react'
+import { Bell, CalendarCheck, Menu } from 'lucide-react'
 import Link from 'next/link'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { PatientSearch } from '@/components/layout/patient-search'
 import { cn } from '@/lib/utils'
-import type { AppointmentRow, AppointmentStatus } from '@/components/appointments/data'
+import type {
+  AppointmentRow,
+  AppointmentStatus,
+} from '@/components/appointments/data'
 import type { UserRole } from '@/lib/auth/types'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -82,14 +85,7 @@ export function TopNavbar({
       </button>
 
       {/* Search */}
-      <div className="relative w-full max-w-sm">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search patients, appointments…"
-          className="pl-9"
-        />
-      </div>
+      <PatientSearch />
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-2">
@@ -122,9 +118,7 @@ export function TopNavbar({
                     : `${notifCount} appointment${notifCount !== 1 ? 's' : ''} today`}
                 </p>
               </div>
-              {notifCount > 0 && (
-                <Badge variant="purple">{notifCount}</Badge>
-              )}
+              {notifCount > 0 && <Badge variant="purple">{notifCount}</Badge>}
             </div>
 
             {/* List */}

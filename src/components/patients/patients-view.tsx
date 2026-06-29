@@ -13,7 +13,7 @@ import {
   type PatientsSortOption,
 } from '@/components/patients/patients-toolbar'
 import { PatientCard } from '@/components/patients/patient-card'
-import { type PatientRow } from '@/components/patients/data'
+import { formatPatientCode, type PatientRow } from '@/components/patients/data'
 import type { SponsorRow } from '@/lib/data/sponsors'
 import { cn } from '@/lib/utils'
 
@@ -24,10 +24,7 @@ interface PatientsViewProps {
   sponsors: SponsorRow[]
 }
 
-export function PatientsView({
-  initialPatients,
-  sponsors,
-}: PatientsViewProps) {
+export function PatientsView({ initialPatients, sponsors }: PatientsViewProps) {
   const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
   const [patients, setPatients] = useState<PatientRow[]>(initialPatients)
   const [search, setSearch] = useState('')
@@ -43,7 +40,10 @@ export function PatientsView({
       ? patients.filter(
           (patient) =>
             patient.name.toLowerCase().includes(query) ||
-            patient.address.toLowerCase().includes(query),
+            patient.address.toLowerCase().includes(query) ||
+            formatPatientCode(patient.patientNumber)
+              .toLowerCase()
+              .includes(query),
         )
       : [...patients]
 

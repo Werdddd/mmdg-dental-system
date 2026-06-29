@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import type { PatientRow } from '@/components/patients/data'
+import { formatPatientCode, type PatientRow } from '@/components/patients/data'
 
 interface PatientCardProps {
   patient: PatientRow
@@ -67,6 +67,9 @@ export function PatientCard({ patient, view }: PatientCardProps) {
         </Avatar>
         <div className={cn(!isList && 'pr-4')}>
           <p className="font-semibold">{patient.name}</p>
+          <p className="text-xs text-muted-foreground">
+            {formatPatientCode(patient.patientNumber)}
+          </p>
           <p className="text-sm text-muted-foreground">
             {patient.age} yrs · {patient.gender}
           </p>

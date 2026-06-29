@@ -1,27 +1,10 @@
 import { formatDisplayDate } from '@/lib/utils'
-import type {
-  PatientRow,
-  EmergencyContact,
-  ChiefComplaint,
+import {
+  formatPatientCode,
+  type PatientRow,
+  type EmergencyContact,
+  type ChiefComplaint,
 } from '@/components/patients/data'
-
-function hashSeed(value: string) {
-  let hash = 0
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 31 + value.charCodeAt(i)) >>> 0
-  }
-  return hash || 1
-}
-
-export function formatPatientCode(id: string) {
-  if (id.startsWith('pat-')) {
-    const num = Number(id.replace('pat-', '')) || 0
-    return `PT-${String(num).padStart(4, '0')}`
-  }
-  // UUID: derive a stable 4-digit number from the id hash
-  const num = (hashSeed(id) % 9000) + 1000
-  return `PT-${num}`
-}
 
 /* ---------- About / contact / emergency contact ---------- */
 
@@ -50,7 +33,7 @@ function fallback(value: string) {
 
 export function getPatientProfile(patient: PatientRow): PatientProfile {
   return {
-    patientCode: formatPatientCode(patient.id),
+    patientCode: formatPatientCode(patient.patientNumber),
     about: {
       dateOfBirth: patient.birthdayIso
         ? formatDisplayDate(patient.birthdayIso)
