@@ -3,10 +3,11 @@ import { CalendarCheck } from 'lucide-react'
 import type { AppointmentRow } from '@/components/appointments/data'
 
 const STATUS_TEXT: Record<string, string> = {
-  Confirmed: 'Appointment confirmed',
+  Scheduled: 'Appointment scheduled',
   Completed: 'Appointment completed',
-  Ongoing: 'Appointment in progress',
+  'In Progress': 'Appointment in progress',
   Cancelled: 'Appointment cancelled',
+  'No Show': 'Patient did not show up',
   Rescheduled: 'Appointment rescheduled',
 }
 

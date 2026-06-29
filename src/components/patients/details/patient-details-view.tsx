@@ -8,8 +8,11 @@ import { cn } from '@/lib/utils'
 import type { PatientRow } from '@/components/patients/data'
 import type { PatientAppointmentData } from '@/lib/data/appointments'
 import type { PatientNoteEntry } from '@/lib/data/patient-notes'
+import type { ToothRecord } from '@/lib/data/dental-chart'
+import type { ToothPhoto } from '@/lib/data/dental-chart-photos'
+import type { ClinicBranch } from '@/lib/dental/branches'
+import type { DentistOption } from '@/lib/data/dentists'
 import {
-  getDentalChart,
   getPatientProfile,
   getPaymentHistory,
   appointmentsToDentalHistory,
@@ -24,19 +27,26 @@ interface PatientDetailsViewProps {
   patient: PatientRow
   appointments?: PatientAppointmentData[]
   notes?: PatientNoteEntry[]
+  dentalChart: ToothRecord[]
+  branches: ClinicBranch[]
+  photos: ToothPhoto[]
+  dentists: DentistOption[]
 }
 
 export function PatientDetailsView({
   patient,
   appointments,
   notes = [],
+  dentalChart,
+  branches,
+  photos,
+  dentists,
 }: PatientDetailsViewProps) {
   const profile = getPatientProfile(patient)
   const dentalHistory =
     appointments && appointments.length > 0
       ? appointmentsToDentalHistory(patient.id, appointments)
       : []
-  const dentalChart = getDentalChart(patient)
   const paymentHistory = getPaymentHistory(patient)
 
   return (
@@ -58,8 +68,12 @@ export function PatientDetailsView({
       </div>
 
       <MedicalRecordsTabs
+        patientId={patient.id}
         dentalHistory={dentalHistory}
         dentalChart={dentalChart}
+        branches={branches}
+        photos={photos}
+        dentists={dentists}
         paymentHistory={paymentHistory}
       />
     </>

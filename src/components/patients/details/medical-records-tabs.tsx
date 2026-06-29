@@ -5,18 +5,29 @@ import { PatientPaymentHistoryTable } from '@/components/patients/details/patien
 import type {
   DentalHistoryEntry,
   PatientPaymentEntry,
-  ToothRecord,
 } from '@/components/patients/details/data'
+import type { ToothRecord } from '@/lib/data/dental-chart'
+import type { ToothPhoto } from '@/lib/data/dental-chart-photos'
+import type { ClinicBranch } from '@/lib/dental/branches'
+import type { DentistOption } from '@/lib/data/dentists'
 
 interface MedicalRecordsTabsProps {
+  patientId: string
   dentalHistory: DentalHistoryEntry[]
   dentalChart: ToothRecord[]
+  branches: ClinicBranch[]
+  photos: ToothPhoto[]
+  dentists: DentistOption[]
   paymentHistory: PatientPaymentEntry[]
 }
 
 export function MedicalRecordsTabs({
+  patientId,
   dentalHistory,
   dentalChart,
+  branches,
+  photos,
+  dentists,
   paymentHistory,
 }: MedicalRecordsTabsProps) {
   return (
@@ -41,7 +52,13 @@ export function MedicalRecordsTabs({
           <DentalHistoryTable entries={dentalHistory} />
         </TabsContent>
         <TabsContent value="chart">
-          <DentalChartPanel records={dentalChart} />
+          <DentalChartPanel
+            patientId={patientId}
+            records={dentalChart}
+            branches={branches}
+            photos={photos}
+            dentists={dentists}
+          />
         </TabsContent>
         <TabsContent value="payments">
           <PatientPaymentHistoryTable entries={paymentHistory} />

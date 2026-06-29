@@ -5,6 +5,7 @@ import type {
   ChiefComplaint,
 } from '@/components/patients/data'
 import { DENTISTS } from '@/components/shared/clinic-roster'
+import { formatToothLabel } from '@/lib/dental/teeth'
 import type { PaymentMethod } from '@/components/payments/data'
 import type { InvoiceStatus } from '@/components/invoices/data'
 import type { PatientAppointmentData } from '@/lib/data/appointments'
@@ -51,105 +52,6 @@ export function formatPatientCode(id: string) {
   // UUID: derive a stable 4-digit number from the id hash
   const num = (hashSeed(id) % 9000) + 1000
   return `PT-${num}`
-}
-
-/* ---------- Adult tooth chart (Universal Numbering System) ---------- */
-
-export type ToothCondition =
-  | 'Healthy'
-  | 'Cavity'
-  | 'Filled'
-  | 'Crown'
-  | 'Root Canal'
-  | 'Missing'
-
-export interface ToothRecord {
-  tooth: number
-  condition: ToothCondition
-  treatmentPerformed: string
-  lastUpdated: string
-  dentist: string
-}
-
-export const UPPER_ARCH = Array.from({ length: 16 }, (_, i) => i + 1)
-export const LOWER_ARCH = Array.from({ length: 16 }, (_, i) => 32 - i)
-
-const TOOTH_NAMES_BY_POSITION = [
-  'Third Molar',
-  'Second Molar',
-  'First Molar',
-  'Second Premolar',
-  'First Premolar',
-  'Canine',
-  'Lateral Incisor',
-  'Central Incisor',
-]
-
-function toothInfo(tooth: number) {
-  if (tooth >= 1 && tooth <= 8) {
-    return { quadrant: 'Upper Right', name: TOOTH_NAMES_BY_POSITION[tooth - 1] }
-  }
-  if (tooth >= 9 && tooth <= 16) {
-    return { quadrant: 'Upper Left', name: TOOTH_NAMES_BY_POSITION[16 - tooth] }
-  }
-  if (tooth >= 17 && tooth <= 24) {
-    return { quadrant: 'Lower Left', name: TOOTH_NAMES_BY_POSITION[tooth - 17] }
-  }
-  return { quadrant: 'Lower Right', name: TOOTH_NAMES_BY_POSITION[32 - tooth] }
-}
-
-export function formatToothLabel(tooth: number) {
-  const { quadrant, name } = toothInfo(tooth)
-  return `Tooth #${tooth} (${quadrant} ${name})`
-}
-
-const NON_HEALTHY_CONDITIONS: Exclude<ToothCondition, 'Healthy'>[] = [
-  'Cavity',
-  'Filled',
-  'Crown',
-  'Root Canal',
-  'Missing',
-]
-
-const TREATMENT_BY_CONDITION: Record<
-  Exclude<ToothCondition, 'Healthy'>,
-  string
-> = {
-  Cavity: 'Pending treatment',
-  Filled: 'Composite Filling',
-  Crown: 'Porcelain Crown Placement',
-  'Root Canal': 'Root Canal Therapy',
-  Missing: 'Tooth Extraction (Prior History)',
-}
-
-export function getDentalChart(patient: PatientRow): ToothRecord[] {
-  const rand = createRandom(`${patient.id}-chart`)
-  const affectedCount = pickInt(rand, 3, 6)
-  const allTeeth = Array.from({ length: 32 }, (_, i) => i + 1)
-  const affected = new Set<number>()
-  while (affected.size < affectedCount) {
-    affected.add(pickFrom(rand, allTeeth))
-  }
-
-  return allTeeth.map((tooth) => {
-    if (!affected.has(tooth)) {
-      return {
-        tooth,
-        condition: 'Healthy',
-        treatmentPerformed: '—',
-        lastUpdated: '—',
-        dentist: '—',
-      }
-    }
-    const condition = pickFrom(rand, NON_HEALTHY_CONDITIONS)
-    return {
-      tooth,
-      condition,
-      treatmentPerformed: TREATMENT_BY_CONDITION[condition],
-      lastUpdated: shiftDate(patient.lastAppointment, -pickInt(rand, 14, 380)),
-      dentist: pickFrom(rand, DENTISTS).name,
-    }
-  })
 }
 
 /* ---------- Visit profiles, keyed by lastAppointmentReason ---------- */

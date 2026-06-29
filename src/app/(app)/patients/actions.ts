@@ -16,6 +16,19 @@ import {
   updatePatientNote,
   deletePatientNote,
 } from '@/lib/data/patient-notes'
+import {
+  upsertToothRecord,
+  type ToothRecordInput,
+} from '@/lib/data/dental-chart'
+import {
+  addPatientBranch,
+  removePatientBranch,
+} from '@/lib/data/patient-branches'
+import {
+  addToothPhoto,
+  deleteToothPhoto,
+} from '@/lib/data/dental-chart-photos'
+import type { ClinicBranch } from '@/lib/dental/branches'
 
 export async function addPatientAction(input: NewPatientInput) {
   const clinicId = await getActiveClinicId()
@@ -69,5 +82,83 @@ export async function deletePatientNoteAction(
 ) {
   const supabase = await createClient()
   await deletePatientNote(supabase, noteId)
+  revalidatePath(`/patients/${patientId}`)
+}
+
+export async function updateToothRecordAction(
+  patientId: string,
+  tooth: number,
+  input: ToothRecordInput,
+) {
+  const clinicId = await getActiveClinicId()
+  const supabase = await createClient()
+  await upsertToothRecord(supabase, clinicId, patientId, tooth, input)
+  revalidatePath(`/patients/${patientId}`)
+}
+
+export async function addPatientBranchAction(
+  patientId: string,
+  branch: ClinicBranch,
+) {
+  const clinicId = await getActiveClinicId()
+  const supabase = await createClient()
+  await addPatientBranch(supabase, clinicId, patientId, branch)
+  revalidatePath(`/patients/${patientId}`)
+}
+
+export async function removePatientBranchAction(
+  patientId: string,
+  branch: ClinicBranch,
+) {
+  const supabase = await createClient()
+  await removePatientBranch(supabase, patientId, branch)
+  revalidatePath(`/patients/${patientId}`)
+}
+
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024
+
+export async function uploadToothPhotoAction(formData: FormData) {
+  const patientId = String(formData.get('patientId') ?? '')
+  const toothValue = formData.get('tooth')
+  const caption = String(formData.get('caption') ?? '')
+  const file = formData.get('file')
+
+  if (!patientId || !(file instanceof File) || file.size === 0) {
+    throw new Error('A patient and an image file are required.')
+  }
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Only image files can be uploaded.')
+  }
+  if (file.size > MAX_PHOTO_BYTES) {
+    throw new Error('Image must be smaller than 8MB.')
+  }
+
+  const tooth =
+    typeof toothValue === 'string' && toothValue.length > 0
+      ? Number(toothValue)
+      : null
+
+  const clinicId = await getActiveClinicId()
+  const supabase = await createClient()
+  const profile = await getCurrentProfile()
+
+  await addToothPhoto(
+    supabase,
+    clinicId,
+    patientId,
+    profile?.id,
+    tooth,
+    caption,
+    file,
+  )
+  revalidatePath(`/patients/${patientId}`)
+}
+
+export async function deleteToothPhotoAction(
+  patientId: string,
+  photoId: string,
+) {
+  const supabase = await createClient()
+  await deleteToothPhoto(supabase, photoId)
   revalidatePath(`/patients/${patientId}`)
 }

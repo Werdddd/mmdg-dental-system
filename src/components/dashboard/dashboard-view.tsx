@@ -93,7 +93,7 @@ export function DashboardView({
   )
 
   const confirmedCount = useMemo(
-    () => appointments.filter((a) => a.status === 'Confirmed').length,
+    () => appointments.filter((a) => a.status === 'Scheduled').length,
     [appointments],
   )
 
@@ -146,7 +146,7 @@ export function DashboardView({
           helperText="registered at this clinic"
         />
         <StatCard
-          label="Confirmed"
+          label="Scheduled"
           value={String(confirmedCount)}
           icon={Clock}
           helperText="upcoming appointments"

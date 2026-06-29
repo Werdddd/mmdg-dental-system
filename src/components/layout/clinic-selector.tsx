@@ -26,8 +26,8 @@ export function ClinicSelector({ clinics, activeClinicId }: ClinicSelectorProps)
   const activeName =
     clinics.find((c) => c.id === activeClinicId)?.name ?? 'Select clinic'
 
-  function handleChange(clinicId: string) {
-    if (clinicId === activeClinicId || isPending) return
+  function handleChange(clinicId: string | null) {
+    if (!clinicId || clinicId === activeClinicId || isPending) return
     startTransition(async () => {
       await setActiveClinicAction(clinicId)
       router.refresh()

@@ -5,6 +5,10 @@ import { getActiveClinicId } from '@/lib/data/clinic'
 import { getPatientById } from '@/lib/data/patients'
 import { getPatientAppointments } from '@/lib/data/appointments'
 import { getPatientNotes } from '@/lib/data/patient-notes'
+import { getToothRecords } from '@/lib/data/dental-chart'
+import { getPatientBranches } from '@/lib/data/patient-branches'
+import { getToothPhotos } from '@/lib/data/dental-chart-photos'
+import { getDentists } from '@/lib/data/dentists'
 import { PatientDetailsView } from '@/components/patients/details/patient-details-view'
 
 export default async function PatientDetailsPage({
@@ -16,10 +20,22 @@ export default async function PatientDetailsPage({
   const supabase = await createClient()
   const clinicId = await getActiveClinicId()
 
-  const [patient, appointments, notes] = await Promise.all([
+  const [
+    patient,
+    appointments,
+    notes,
+    dentalChart,
+    branches,
+    photos,
+    dentists,
+  ] = await Promise.all([
     getPatientById(supabase, clinicId, id),
     getPatientAppointments(supabase, clinicId, id),
     getPatientNotes(supabase, clinicId, id),
+    getToothRecords(supabase, clinicId, id),
+    getPatientBranches(supabase, clinicId, id),
+    getToothPhotos(supabase, clinicId, id),
+    getDentists(supabase, clinicId),
   ])
 
   if (!patient) {
@@ -31,6 +47,10 @@ export default async function PatientDetailsPage({
       patient={patient}
       appointments={appointments}
       notes={notes}
+      dentalChart={dentalChart}
+      branches={branches}
+      photos={photos}
+      dentists={dentists}
     />
   )
 }

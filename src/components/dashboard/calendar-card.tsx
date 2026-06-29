@@ -23,10 +23,11 @@ const MONTH_NAMES = [
 ]
 
 const STATUS_DOT: Record<AppointmentStatus, string> = {
-  Confirmed: 'bg-blue-500',
+  Scheduled: 'bg-blue-500',
+  'In Progress': 'bg-amber-500',
   Completed: 'bg-emerald-500',
-  Ongoing: 'bg-amber-500',
   Cancelled: 'bg-destructive',
+  'No Show': 'bg-slate-400',
   Rescheduled: 'bg-orange-400',
 }
 
