@@ -1,6 +1,8 @@
 import {
   Banknote,
   CreditCard,
+  Gift,
+  HeartHandshake,
   Landmark,
   MoreHorizontal,
   Wallet,
@@ -26,18 +28,14 @@ import {
 } from '@/components/ui/table'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { formatCurrency } from '@/lib/utils'
-import type { PatientPaymentEntry } from '@/components/patients/details/data'
-import type { PaymentMethod } from '@/components/payments/data'
-import type { InvoiceStatus } from '@/components/invoices/data'
+import type { PaymentMethod, PaymentRow, PaymentStatus } from '@/components/payments/data'
 
 const STATUS_VARIANT: Record<
-  InvoiceStatus,
+  PaymentStatus,
   VariantProps<typeof badgeVariants>['variant']
 > = {
   Paid: 'success',
-  'Partially Paid': 'warning',
-  Overdue: 'destructive',
-  Unpaid: 'secondary',
+  Refunded: 'secondary',
 }
 
 const METHOD_ICON: Record<PaymentMethod, LucideIcon> = {
@@ -46,10 +44,12 @@ const METHOD_ICON: Record<PaymentMethod, LucideIcon> = {
   Bank: Landmark,
   GCash: Wallet,
   Maya: Wallet,
+  Sponsored: HeartHandshake,
+  'Pro Bono': Gift,
 }
 
 interface PatientPaymentHistoryTableProps {
-  entries: PatientPaymentEntry[]
+  entries: PaymentRow[]
 }
 
 export function PatientPaymentHistoryTable({
@@ -87,7 +87,7 @@ export function PatientPaymentHistoryTable({
                   {entry.date}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {entry.treatment}
+                  {entry.service}
                 </TableCell>
                 <TableCell className="whitespace-nowrap font-medium">
                   {formatCurrency(entry.amount)}
@@ -105,8 +105,8 @@ export function PatientPaymentHistoryTable({
                   />
                 </TableCell>
                 <TableCell className="whitespace-nowrap font-medium">
-                  {entry.remainingBalance > 0 ? (
-                    formatCurrency(entry.remainingBalance)
+                  {entry.invoiceBalance > 0 ? (
+                    formatCurrency(entry.invoiceBalance)
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
@@ -122,7 +122,7 @@ export function PatientPaymentHistoryTable({
                     <DropdownMenuContent>
                       <DropdownMenuItem>View receipt</DropdownMenuItem>
                       <DropdownMenuItem>Print invoice</DropdownMenuItem>
-                      {entry.remainingBalance > 0 && (
+                      {entry.invoiceBalance > 0 && (
                         <DropdownMenuItem>Send reminder</DropdownMenuItem>
                       )}
                     </DropdownMenuContent>

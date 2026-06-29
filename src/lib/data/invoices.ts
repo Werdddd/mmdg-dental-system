@@ -1,43 +1,55 @@
-import {
-  TAX_RATE,
-  type InvoiceRow,
-  type InvoiceStatus,
-} from '@/components/invoices/data'
+import type { InvoiceRow, InvoiceStatus } from '@/components/invoices/data'
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, initialsOf } from '@/lib/utils'
 
 interface InvoiceQueryRow {
   id: string
   invoice_number: number
-  treatment: string
+  patient_id: string
   due_date: string | null
   subtotal: string | number
-  tax: string | number
   total: string | number
   balance: string | number
   status: InvoiceStatus
   created_at: string
   patient: { full_name: string; phone: string | null } | null
+  invoice_items: {
+    id: string
+    treatment_record_id: string
+    description: string
+    quantity: number
+    unit_price: string | number
+    amount: string | number
+  }[]
 }
 
 const SELECT = `
-  id, invoice_number, treatment, due_date, subtotal, tax, total, balance, status, created_at,
-  patient:patients ( full_name, phone )
+  id, invoice_number, patient_id, due_date, subtotal, total, balance, status, created_at,
+  patient:patients ( full_name, phone ),
+  invoice_items ( id, treatment_record_id, description, quantity, unit_price, amount )
 `
 
 function mapInvoiceRow(row: InvoiceQueryRow): InvoiceRow {
   return {
+    rawId: row.id,
     id: `INV-${row.invoice_number}`,
+    patientId: row.patient_id,
     patient: {
       name: row.patient?.full_name ?? 'Unknown Patient',
       initials: initialsOf(row.patient?.full_name ?? '??'),
       phone: row.patient?.phone ?? '',
     },
-    treatment: row.treatment,
+    items: (row.invoice_items ?? []).map((item) => ({
+      id: item.id,
+      treatmentRecordId: item.treatment_record_id,
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: Number(item.unit_price),
+      amount: Number(item.amount),
+    })),
     createdDate: formatDisplayDate(row.created_at.slice(0, 10)),
     dueDate: row.due_date ? formatDisplayDate(row.due_date) : '—',
     subtotal: Number(row.subtotal),
-    tax: Number(row.tax),
     total: Number(row.total),
     balance: Number(row.balance),
     status: row.status,
@@ -58,37 +70,81 @@ export async function getInvoices(
   return ((data ?? []) as unknown as InvoiceQueryRow[]).map(mapInvoiceRow)
 }
 
-export interface NewInvoiceInput {
-  patientId: string
-  treatment: string
-  dueDate: string
-  subtotal: number
-  status: InvoiceStatus
-}
-
-export async function createInvoice(
+export async function getInvoicesWithBalance(
   supabase: SupabaseServerClient,
   clinicId: string,
-  input: NewInvoiceInput,
-): Promise<InvoiceRow> {
-  const tax = Math.round(input.subtotal * TAX_RATE)
-  const total = input.subtotal + tax
-  const balance = input.status === 'Paid' ? 0 : total
-
+): Promise<InvoiceRow[]> {
   const { data, error } = await supabase
+    .from('invoices')
+    .select(SELECT)
+    .eq('clinic_id', clinicId)
+    .gt('balance', 0)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return ((data ?? []) as unknown as InvoiceQueryRow[]).map(mapInvoiceRow)
+}
+
+export interface GenerateInvoiceInput {
+  patientId: string
+  treatmentRecordIds: string[]
+  dueDate: string
+}
+
+export async function generateInvoice(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  input: GenerateInvoiceInput,
+): Promise<InvoiceRow> {
+  if (input.treatmentRecordIds.length === 0) {
+    throw new Error('Select at least one treatment to invoice.')
+  }
+
+  const { data: treatmentRecords, error: treatmentError } = await supabase
+    .from('treatment_records')
+    .select('id, treatment, cost')
+    .eq('clinic_id', clinicId)
+    .eq('patient_id', input.patientId)
+    .eq('status', 'Pending')
+    .in('id', input.treatmentRecordIds)
+
+  if (treatmentError) throw treatmentError
+  if (!treatmentRecords || treatmentRecords.length !== input.treatmentRecordIds.length) {
+    throw new Error(
+      'One or more selected treatments are no longer available to invoice.',
+    )
+  }
+
+  const { data: invoice, error: invoiceError } = await supabase
     .from('invoices')
     .insert({
       clinic_id: clinicId,
       patient_id: input.patientId,
-      treatment: input.treatment,
       due_date: input.dueDate,
-      subtotal: input.subtotal,
-      tax,
-      total,
-      balance,
-      status: input.status,
     })
+    .select('id')
+    .single()
+
+  if (invoiceError) throw invoiceError
+
+  const { error: itemsError } = await supabase.from('invoice_items').insert(
+    treatmentRecords.map((record) => ({
+      clinic_id: clinicId,
+      invoice_id: invoice.id,
+      treatment_record_id: record.id,
+      description: record.treatment,
+      quantity: 1,
+      unit_price: record.cost,
+      amount: record.cost,
+    })),
+  )
+
+  if (itemsError) throw itemsError
+
+  const { data, error } = await supabase
+    .from('invoices')
     .select(SELECT)
+    .eq('id', invoice.id)
     .single()
 
   if (error) throw error

@@ -25,15 +25,18 @@ import { cn } from '@/lib/utils'
 import type { PatientRow } from '@/components/patients/data'
 import type { PatientProfile } from '@/components/patients/details/data'
 import { EditPatientDialog } from '@/components/patients/details/edit-patient-dialog'
+import type { SponsorRow } from '@/lib/data/sponsors'
 
 interface PatientHeaderCardProps {
   patient: PatientRow
   profile: PatientProfile
+  sponsors: SponsorRow[]
 }
 
 export function PatientHeaderCard({
   patient,
   profile,
+  sponsors,
 }: PatientHeaderCardProps) {
   const [documentsOpen, setDocumentsOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -61,6 +64,18 @@ export function PatientHeaderCard({
               >
                 {patient.treatmentStatus}
               </Badge>
+              {patient.patientType !== 'Regular' && (
+                <Badge
+                  variant={
+                    patient.patientType === 'Sponsored' ? 'purple' : 'info'
+                  }
+                >
+                  {patient.patientType}
+                  {patient.sponsorship
+                    ? ` · ${patient.sponsorship.sponsorName}`
+                    : ''}
+                </Badge>
+              )}
             </div>
 
             <p className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground sm:justify-start">
@@ -129,6 +144,7 @@ export function PatientHeaderCard({
 
       <EditPatientDialog
         patient={patient}
+        sponsors={sponsors}
         open={editOpen}
         onOpenChange={setEditOpen}
       />

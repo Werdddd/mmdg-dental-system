@@ -1,10 +1,19 @@
-export type PaymentMethod = 'Cash' | 'Card' | 'Bank' | 'GCash' | 'Maya'
+export type PaymentMethod =
+  | 'Cash'
+  | 'Card'
+  | 'Bank'
+  | 'GCash'
+  | 'Maya'
+  | 'Sponsored'
+  | 'Pro Bono'
 
-export type PaymentStatus = 'Paid' | 'Partially Paid' | 'Unpaid' | 'Refunded'
+export type PaymentStatus = 'Paid' | 'Refunded'
 
 export interface PaymentRow {
   id: string
   invoiceId: string
+  invoiceRawId: string
+  patientId: string
   patient: { name: string; initials: string; phone: string }
   service: string
   dentist: string
@@ -12,348 +21,19 @@ export interface PaymentRow {
   amount: number
   method: PaymentMethod
   status: PaymentStatus
+  sponsorName: string | null
+  invoiceBalance: number
 }
 
-export const PAYMENTS: PaymentRow[] = [
-  {
-    id: 'PAY-1001',
-    invoiceId: 'INV-2031',
-    patient: {
-      name: 'Maria Santos',
-      initials: 'MS',
-      phone: '+63 912 345 6781',
-    },
-    service: 'Dental Cleaning',
-    dentist: 'Dr. Sarah Reyes',
-    date: 'Jun 21, 2026',
-    amount: 1500,
-    method: 'Cash',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1002',
-    invoiceId: 'INV-2032',
-    patient: { name: 'James Cruz', initials: 'JC', phone: '+63 917 222 4456' },
-    service: 'Root Canal Treatment',
-    dentist: 'Dr. Michael Tan',
-    date: 'Jun 21, 2026',
-    amount: 8500,
-    method: 'Card',
-    status: 'Partially Paid',
-  },
-  {
-    id: 'PAY-1003',
-    invoiceId: 'INV-2033',
-    patient: {
-      name: 'Liza Fernandez',
-      initials: 'LF',
-      phone: '+63 905 671 2390',
-    },
-    service: 'Tooth Extraction',
-    dentist: 'Dr. Elena Cruz',
-    date: 'Jun 20, 2026',
-    amount: 3200,
-    method: 'GCash',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1004',
-    invoiceId: 'INV-2034',
-    patient: {
-      name: 'Noah Bautista',
-      initials: 'NB',
-      phone: '+63 918 044 7723',
-    },
-    service: 'Dental Filling',
-    dentist: 'Dr. Sarah Reyes',
-    date: 'Jun 20, 2026',
-    amount: 2200,
-    method: 'Maya',
-    status: 'Unpaid',
-  },
-  {
-    id: 'PAY-1005',
-    invoiceId: 'INV-2035',
-    patient: { name: 'Ana Lim', initials: 'AL', phone: '+63 933 110 8845' },
-    service: 'Teeth Whitening',
-    dentist: 'Dr. Joshua Santos',
-    date: 'Jun 19, 2026',
-    amount: 6500,
-    method: 'Bank',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1006',
-    invoiceId: 'INV-2036',
-    patient: { name: 'Mark Tan', initials: 'MT', phone: '+63 922 384 1190' },
-    service: 'Braces Adjustment',
-    dentist: 'Dr. Patricia Lim',
-    date: 'Jun 19, 2026',
-    amount: 1800,
-    method: 'Cash',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1007',
-    invoiceId: 'INV-2037',
-    patient: { name: 'Carla Reyes', initials: 'CR', phone: '+63 906 552 9981' },
-    service: 'Dental Implant',
-    dentist: 'Dr. Sarah Reyes',
-    date: 'Jun 18, 2026',
-    amount: 45000,
-    method: 'Bank',
-    status: 'Partially Paid',
-  },
-  {
-    id: 'PAY-1008',
-    invoiceId: 'INV-2038',
-    patient: {
-      name: 'Paolo Mendoza',
-      initials: 'PM',
-      phone: '+63 919 773 2204',
-    },
-    service: 'Scaling and Polishing',
-    dentist: 'Dr. Michael Tan',
-    date: 'Jun 18, 2026',
-    amount: 1200,
-    method: 'GCash',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1009',
-    invoiceId: 'INV-2039',
-    patient: {
-      name: 'Grace Villanueva',
-      initials: 'GV',
-      phone: '+63 947 661 3328',
-    },
-    service: 'Wisdom Tooth Removal',
-    dentist: 'Dr. Elena Cruz',
-    date: 'Jun 17, 2026',
-    amount: 9500,
-    method: 'Card',
-    status: 'Refunded',
-  },
-  {
-    id: 'PAY-1010',
-    invoiceId: 'INV-2040',
-    patient: { name: 'Diego Ramos', initials: 'DR', phone: '+63 928 514 7762' },
-    service: 'Crown Placement',
-    dentist: 'Dr. Sarah Reyes',
-    date: 'Jun 17, 2026',
-    amount: 12500,
-    method: 'Maya',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1011',
-    invoiceId: 'INV-2041',
-    patient: {
-      name: 'Sofia Garcia',
-      initials: 'SG',
-      phone: '+63 915 330 6647',
-    },
-    service: 'Checkup & Consultation',
-    dentist: 'Dr. Joshua Santos',
-    date: 'Jun 16, 2026',
-    amount: 500,
-    method: 'Cash',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1012',
-    invoiceId: 'INV-2042',
-    patient: {
-      name: 'Miguel Torres',
-      initials: 'MT',
-      phone: '+63 939 882 1056',
-    },
-    service: 'Veneers',
-    dentist: 'Dr. Patricia Lim',
-    date: 'Jun 16, 2026',
-    amount: 18000,
-    method: 'Bank',
-    status: 'Unpaid',
-  },
-  {
-    id: 'PAY-1013',
-    invoiceId: 'INV-2043',
-    patient: { name: 'Isabel Cruz', initials: 'IC', phone: '+63 917 446 9923' },
-    service: 'Dental Filling',
-    dentist: 'Dr. Sarah Reyes',
-    date: 'Jun 15, 2026',
-    amount: 2000,
-    method: 'GCash',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1014',
-    invoiceId: 'INV-2044',
-    patient: {
-      name: 'Rafael Santos',
-      initials: 'RS',
-      phone: '+63 906 271 5510',
-    },
-    service: 'Root Canal Treatment',
-    dentist: 'Dr. Michael Tan',
-    date: 'Jun 15, 2026',
-    amount: 8500,
-    method: 'Card',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1015',
-    invoiceId: 'INV-2045',
-    patient: {
-      name: 'Camille Aquino',
-      initials: 'CA',
-      phone: '+63 922 905 3387',
-    },
-    service: 'Tooth Extraction',
-    dentist: 'Dr. Elena Cruz',
-    date: 'Jun 14, 2026',
-    amount: 3200,
-    method: 'Cash',
-    status: 'Partially Paid',
-  },
-  {
-    id: 'PAY-1016',
-    invoiceId: 'INV-2046',
-    patient: { name: 'Joshua Lim', initials: 'JL', phone: '+63 933 661 4471' },
-    service: 'Dental Cleaning',
-    dentist: 'Dr. Sarah Reyes',
-    date: 'Jun 14, 2026',
-    amount: 1500,
-    method: 'Maya',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1017',
-    invoiceId: 'INV-2047',
-    patient: {
-      name: 'Patricia Gomez',
-      initials: 'PG',
-      phone: '+63 918 224 6650',
-    },
-    service: 'Braces Adjustment',
-    dentist: 'Dr. Joshua Santos',
-    date: 'Jun 13, 2026',
-    amount: 1800,
-    method: 'GCash',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1018',
-    invoiceId: 'INV-2048',
-    patient: {
-      name: 'Andres Dela Cruz',
-      initials: 'AD',
-      phone: '+63 905 117 8834',
-    },
-    service: 'Dental Implant',
-    dentist: 'Dr. Patricia Lim',
-    date: 'Jun 13, 2026',
-    amount: 45000,
-    method: 'Bank',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1019',
-    invoiceId: 'INV-2049',
-    patient: {
-      name: 'Kristine Navarro',
-      initials: 'KN',
-      phone: '+63 947 338 2295',
-    },
-    service: 'Teeth Whitening',
-    dentist: 'Dr. Sarah Reyes',
-    date: 'Jun 12, 2026',
-    amount: 6500,
-    method: 'Card',
-    status: 'Unpaid',
-  },
-  {
-    id: 'PAY-1020',
-    invoiceId: 'INV-2050',
-    patient: { name: 'Leo Domingo', initials: 'LD', phone: '+63 928 660 1147' },
-    service: 'Scaling and Polishing',
-    dentist: 'Dr. Michael Tan',
-    date: 'Jun 12, 2026',
-    amount: 1200,
-    method: 'Cash',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1021',
-    invoiceId: 'INV-2051',
-    patient: {
-      name: 'Angela Pascual',
-      initials: 'AP',
-      phone: '+63 915 778 3362',
-    },
-    service: 'Crown Placement',
-    dentist: 'Dr. Elena Cruz',
-    date: 'Jun 11, 2026',
-    amount: 12500,
-    method: 'GCash',
-    status: 'Partially Paid',
-  },
-  {
-    id: 'PAY-1022',
-    invoiceId: 'INV-2052',
-    patient: {
-      name: 'Vincent Ocampo',
-      initials: 'VO',
-      phone: '+63 939 224 6678',
-    },
-    service: 'Checkup & Consultation',
-    dentist: 'Dr. Sarah Reyes',
-    date: 'Jun 11, 2026',
-    amount: 500,
-    method: 'Maya',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1023',
-    invoiceId: 'INV-2053',
-    patient: {
-      name: 'Trisha Ramirez',
-      initials: 'TR',
-      phone: '+63 917 552 9904',
-    },
-    service: 'Wisdom Tooth Removal',
-    dentist: 'Dr. Joshua Santos',
-    date: 'Jun 10, 2026',
-    amount: 9500,
-    method: 'Bank',
-    status: 'Paid',
-  },
-  {
-    id: 'PAY-1024',
-    invoiceId: 'INV-2054',
-    patient: {
-      name: 'Nathaniel Cruz',
-      initials: 'NC',
-      phone: '+63 906 884 1123',
-    },
-    service: 'Veneers',
-    dentist: 'Dr. Patricia Lim',
-    date: 'Jun 10, 2026',
-    amount: 18000,
-    method: 'Card',
-    status: 'Refunded',
-  },
-]
-
 export function computePaymentsSummary(payments: PaymentRow[]) {
+  const completed = payments.filter((p) => p.status === 'Paid')
+
   return {
-    totalRevenue: payments
-      .filter((p) => p.status === 'Paid' || p.status === 'Partially Paid')
+    totalRevenue: completed.reduce((sum, p) => sum + p.amount, 0),
+    paidCount: completed.length,
+    coverageAmount: completed
+      .filter((p) => p.method === 'Sponsored' || p.method === 'Pro Bono')
       .reduce((sum, p) => sum + p.amount, 0),
-    paidCount: payments.filter((p) => p.status === 'Paid').length,
-    pendingCount: payments.filter(
-      (p) => p.status === 'Unpaid' || p.status === 'Partially Paid',
-    ).length,
     refundedAmount: payments
       .filter((p) => p.status === 'Refunded')
       .reduce((sum, p) => sum + p.amount, 0),

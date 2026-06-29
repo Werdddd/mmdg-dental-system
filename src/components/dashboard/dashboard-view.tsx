@@ -17,7 +17,10 @@ import { ClinicSelector } from '@/components/layout/clinic-selector'
 import { useClinicContext } from '@/components/layout/clinic-context'
 import type { AppointmentRow } from '@/components/appointments/data'
 import type { PatientRow } from '@/components/patients/data'
+import type { InvoiceRow } from '@/components/invoices/data'
 import type { DentistOption } from '@/lib/data/dentists'
+import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
+import type { SponsorRow } from '@/lib/data/sponsors'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -67,6 +70,9 @@ interface DashboardViewProps {
   appointments: AppointmentRow[]
   patients: PatientRow[]
   dentists: DentistOption[]
+  invoicesWithBalance: InvoiceRow[]
+  pendingTreatments: TreatmentRecordRow[]
+  sponsors: SponsorRow[]
   profileName: string
 }
 
@@ -74,6 +80,9 @@ export function DashboardView({
   appointments,
   patients,
   dentists,
+  invoicesWithBalance,
+  pendingTreatments,
+  sponsors,
   profileName,
 }: DashboardViewProps) {
   const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
@@ -197,19 +206,22 @@ export function DashboardView({
       <AddPatientDialog
         open={patientOpen}
         onOpenChange={setPatientOpen}
+        sponsors={sponsors}
         onAdd={() => setPatientOpen(false)}
       />
       <AddInvoiceDialog
         open={invoiceOpen}
         onOpenChange={setInvoiceOpen}
         patients={patients}
+        pendingTreatments={pendingTreatments}
         onAdd={() => setInvoiceOpen(false)}
       />
       <AddPaymentDialog
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
+        invoices={invoicesWithBalance}
         patients={patients}
-        dentists={dentists}
+        sponsors={sponsors}
         onAdd={() => setPaymentOpen(false)}
       />
     </>

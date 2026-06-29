@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   CalendarDays,
+  HeartHandshake,
   LayoutDashboard,
   LogOut,
   Receipt,
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { label: 'Appointments', icon: CalendarDays, href: '/appointments' },
   { label: 'Patients', icon: Users, href: '/patients' },
+  { label: 'Sponsors', icon: HeartHandshake, href: '/sponsors' },
   { label: 'Payments', icon: Wallet, href: '/payments' },
   { label: 'Invoices', icon: Receipt, href: '/invoices' },
   { label: 'Settings', icon: Settings, href: '/settings' },

@@ -28,12 +28,27 @@ import {
   addToothPhoto,
   deleteToothPhoto,
 } from '@/lib/data/dental-chart-photos'
+import {
+  createTreatmentRecord,
+  type NewTreatmentRecordInput,
+} from '@/lib/data/treatment-records'
+import {
+  setPatientSponsorship,
+  clearPatientSponsorship,
+  type SetPatientSponsorshipInput,
+} from '@/lib/data/sponsors'
 import type { ClinicBranch } from '@/lib/dental/branches'
 
-export async function addPatientAction(input: NewPatientInput) {
+export async function addPatientAction(
+  input: NewPatientInput,
+  sponsorship?: SetPatientSponsorshipInput,
+) {
   const clinicId = await getActiveClinicId()
   const supabase = await createClient()
   const patient = await createPatient(supabase, clinicId, input)
+  if (input.patientType === 'Sponsored' && sponsorship) {
+    await setPatientSponsorship(supabase, clinicId, patient.id, sponsorship)
+  }
   revalidatePath('/patients')
   return patient
 }
@@ -41,10 +56,16 @@ export async function addPatientAction(input: NewPatientInput) {
 export async function updatePatientAction(
   patientId: string,
   input: UpdatePatientInput,
+  sponsorship?: SetPatientSponsorshipInput,
 ) {
   const clinicId = await getActiveClinicId()
   const supabase = await createClient()
   const patient = await updatePatient(supabase, clinicId, patientId, input)
+  if (input.patientType === 'Sponsored' && sponsorship) {
+    await setPatientSponsorship(supabase, clinicId, patientId, sponsorship)
+  } else if (input.patientType !== 'Sponsored') {
+    await clearPatientSponsorship(supabase, patientId)
+  }
   revalidatePath('/patients')
   revalidatePath(`/patients/${patientId}`)
   return patient
@@ -94,6 +115,16 @@ export async function updateToothRecordAction(
   const supabase = await createClient()
   await upsertToothRecord(supabase, clinicId, patientId, tooth, input)
   revalidatePath(`/patients/${patientId}`)
+}
+
+export async function createTreatmentRecordAction(
+  input: NewTreatmentRecordInput,
+) {
+  const clinicId = await getActiveClinicId()
+  const supabase = await createClient()
+  const record = await createTreatmentRecord(supabase, clinicId, input)
+  revalidatePath(`/patients/${input.patientId}`)
+  return record
 }
 
 export async function addPatientBranchAction(

@@ -32,6 +32,14 @@ const STATUS_VARIANT: Record<
   Unpaid: 'secondary',
 }
 
+function summarizeItems(invoice: InvoiceRow) {
+  if (invoice.items.length === 0) return '—'
+  const [first, ...rest] = invoice.items
+  return rest.length === 0
+    ? first.description
+    : `${first.description} +${rest.length} more`
+}
+
 interface InvoicesTableProps {
   invoices: InvoiceRow[]
 }
@@ -47,7 +55,6 @@ export function InvoicesTable({ invoices }: InvoicesTableProps) {
           <TableHead>Created Date</TableHead>
           <TableHead>Due Date</TableHead>
           <TableHead>Subtotal</TableHead>
-          <TableHead>Tax</TableHead>
           <TableHead>Total Amount</TableHead>
           <TableHead>Remaining Balance</TableHead>
           <TableHead>Status</TableHead>
@@ -58,7 +65,7 @@ export function InvoicesTable({ invoices }: InvoicesTableProps) {
       </TableHeader>
       <TableBody>
         {invoices.length === 0 && (
-          <TableEmpty colSpan={11}>No invoices match your search.</TableEmpty>
+          <TableEmpty colSpan={10}>No invoices match your search.</TableEmpty>
         )}
         {invoices.map((invoice) => (
           <TableRow key={invoice.id}>
@@ -81,7 +88,7 @@ export function InvoicesTable({ invoices }: InvoicesTableProps) {
               </div>
             </TableCell>
             <TableCell className="whitespace-nowrap">
-              {invoice.treatment}
+              {summarizeItems(invoice)}
             </TableCell>
             <TableCell className="whitespace-nowrap text-muted-foreground">
               {invoice.createdDate}
@@ -91,9 +98,6 @@ export function InvoicesTable({ invoices }: InvoicesTableProps) {
             </TableCell>
             <TableCell className="whitespace-nowrap text-muted-foreground">
               {formatCurrency(invoice.subtotal)}
-            </TableCell>
-            <TableCell className="whitespace-nowrap text-muted-foreground">
-              {formatCurrency(invoice.tax)}
             </TableCell>
             <TableCell className="whitespace-nowrap font-medium">
               {formatCurrency(invoice.total)}

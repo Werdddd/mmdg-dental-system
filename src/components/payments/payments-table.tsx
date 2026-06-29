@@ -1,6 +1,8 @@
 import {
   Banknote,
   CreditCard,
+  Gift,
+  HeartHandshake,
   Landmark,
   MoreHorizontal,
   Wallet,
@@ -38,8 +40,6 @@ const STATUS_VARIANT: Record<
   VariantProps<typeof badgeVariants>['variant']
 > = {
   Paid: 'success',
-  'Partially Paid': 'warning',
-  Unpaid: 'destructive',
   Refunded: 'secondary',
 }
 
@@ -49,6 +49,8 @@ const METHOD_ICON: Record<PaymentMethod, LucideIcon> = {
   Bank: Landmark,
   GCash: Wallet,
   Maya: Wallet,
+  Sponsored: HeartHandshake,
+  'Pro Bono': Gift,
 }
 
 interface PaymentsTableProps {
@@ -120,6 +122,9 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
                   <MethodIcon className="size-3.5" />
                   {payment.method}
                 </span>
+                {payment.sponsorName && (
+                  <p className="text-xs">{payment.sponsorName}</p>
+                )}
               </TableCell>
               <TableCell>
                 <StatusBadge

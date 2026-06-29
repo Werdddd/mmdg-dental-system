@@ -4,12 +4,16 @@ import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
 import { getActiveClinicId } from '@/lib/data/clinic'
-import { createInvoice, type NewInvoiceInput } from '@/lib/data/invoices'
+import {
+  generateInvoice,
+  type GenerateInvoiceInput,
+} from '@/lib/data/invoices'
 
-export async function addInvoiceAction(input: NewInvoiceInput) {
+export async function generateInvoiceAction(input: GenerateInvoiceInput) {
   const clinicId = await getActiveClinicId()
   const supabase = await createClient()
-  const invoice = await createInvoice(supabase, clinicId, input)
+  const invoice = await generateInvoice(supabase, clinicId, input)
   revalidatePath('/invoices')
+  revalidatePath(`/patients/${input.patientId}`)
   return invoice
 }

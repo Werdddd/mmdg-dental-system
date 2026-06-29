@@ -1,6 +1,7 @@
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate } from '@/lib/utils'
 import type { ToothCondition } from '@/lib/dental/teeth'
+import { createTreatmentRecordForTooth } from '@/lib/data/treatment-records'
 
 export interface ToothRecord {
   tooth: number
@@ -79,6 +80,7 @@ export interface ToothRecordInput {
   treatmentPerformed: string
   notes: string
   dentistId: string | null
+  cost?: number
 }
 
 export async function upsertToothRecord(
@@ -88,19 +90,35 @@ export async function upsertToothRecord(
   tooth: number,
   input: ToothRecordInput,
 ): Promise<void> {
-  const { error } = await supabase.from('tooth_records').upsert(
-    {
-      clinic_id: clinicId,
-      patient_id: patientId,
-      tooth,
-      condition: input.condition,
-      treatment_performed: input.treatmentPerformed.trim() || null,
-      notes: input.notes.trim() || null,
-      dentist_id: input.dentistId || null,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'patient_id,tooth' },
-  )
+  const { data, error } = await supabase
+    .from('tooth_records')
+    .upsert(
+      {
+        clinic_id: clinicId,
+        patient_id: patientId,
+        tooth,
+        condition: input.condition,
+        treatment_performed: input.treatmentPerformed.trim() || null,
+        notes: input.notes.trim() || null,
+        dentist_id: input.dentistId || null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'patient_id,tooth' },
+    )
+    .select('id')
+    .single()
 
   if (error) throw error
+
+  const treatment = input.treatmentPerformed.trim()
+  if (input.cost && input.cost > 0 && treatment) {
+    await createTreatmentRecordForTooth(supabase, clinicId, {
+      patientId,
+      toothRecordId: data.id,
+      tooth,
+      treatment,
+      dentistId: input.dentistId || null,
+      cost: input.cost,
+    })
+  }
 }

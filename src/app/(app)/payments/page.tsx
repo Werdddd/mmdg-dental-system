@@ -2,16 +2,18 @@ import { createClient } from '@/lib/supabase/server'
 import { getActiveClinicId } from '@/lib/data/clinic'
 import { getPayments } from '@/lib/data/payments'
 import { getPatients } from '@/lib/data/patients'
-import { getDentists } from '@/lib/data/dentists'
+import { getInvoicesWithBalance } from '@/lib/data/invoices'
+import { getSponsors } from '@/lib/data/sponsors'
 import { PaymentsView } from '@/components/payments/payments-view'
 
 export default async function PaymentsPage() {
   const clinicId = await getActiveClinicId()
   const supabase = await createClient()
-  const [payments, patients, dentists] = await Promise.all([
+  const [payments, patients, invoicesWithBalance, sponsors] = await Promise.all([
     getPayments(supabase, clinicId),
     getPatients(supabase, clinicId),
-    getDentists(supabase, clinicId),
+    getInvoicesWithBalance(supabase, clinicId),
+    getSponsors(supabase, clinicId),
   ])
 
   return (
@@ -19,7 +21,8 @@ export default async function PaymentsPage() {
       key={clinicId}
       initialPayments={payments}
       patients={patients}
-      dentists={dentists}
+      invoicesWithBalance={invoicesWithBalance}
+      sponsors={sponsors}
     />
   )
 }

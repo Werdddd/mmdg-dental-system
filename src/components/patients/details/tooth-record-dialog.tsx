@@ -51,6 +51,7 @@ function ToothRecordForm({
   )
   const [dentistId, setDentistId] = useState(record.dentistId ?? '')
   const [notes, setNotes] = useState(record.notes)
+  const [cost, setCost] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -63,6 +64,7 @@ function ToothRecordForm({
         treatmentPerformed,
         notes,
         dentistId: dentistId || null,
+        cost: cost.trim() ? Number(cost) : undefined,
       })
       onSaved()
       router.refresh()
@@ -116,6 +118,27 @@ function ToothRecordForm({
           value={dentistId}
           onValueChange={setDentistId}
         />
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium">
+            Cost (₱){' '}
+            <span className="font-normal text-muted-foreground">
+              (optional — leave blank to record clinical notes only)
+            </span>
+          </label>
+          <Input
+            type="number"
+            min={0}
+            value={cost}
+            onChange={(event) => setCost(event.target.value)}
+            placeholder="0"
+          />
+          {cost.trim() && Number(cost) > 0 && !treatmentPerformed.trim() && (
+            <p className="mt-1 text-xs text-destructive">
+              Enter a treatment performed to bill this cost.
+            </p>
+          )}
+        </div>
 
         <div>
           <label className="mb-1.5 block text-sm font-medium">

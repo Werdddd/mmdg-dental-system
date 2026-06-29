@@ -6,17 +6,15 @@ import { ArrowLeft } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { PatientRow } from '@/components/patients/data'
-import type { PatientAppointmentData } from '@/lib/data/appointments'
 import type { PatientNoteEntry } from '@/lib/data/patient-notes'
 import type { ToothRecord } from '@/lib/data/dental-chart'
 import type { ToothPhoto } from '@/lib/data/dental-chart-photos'
 import type { ClinicBranch } from '@/lib/dental/branches'
 import type { DentistOption } from '@/lib/data/dentists'
-import {
-  getPatientProfile,
-  getPaymentHistory,
-  appointmentsToDentalHistory,
-} from '@/components/patients/details/data'
+import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
+import type { PaymentRow } from '@/components/payments/data'
+import type { SponsorRow } from '@/lib/data/sponsors'
+import { getPatientProfile } from '@/components/patients/details/data'
 import { PatientHeaderCard } from '@/components/patients/details/patient-header-card'
 import { PatientAboutCard } from '@/components/patients/details/patient-about-card'
 import { ChiefComplaintCard } from '@/components/patients/details/chief-complaint-card'
@@ -25,29 +23,28 @@ import { MedicalRecordsTabs } from '@/components/patients/details/medical-record
 
 interface PatientDetailsViewProps {
   patient: PatientRow
-  appointments?: PatientAppointmentData[]
   notes?: PatientNoteEntry[]
   dentalChart: ToothRecord[]
   branches: ClinicBranch[]
   photos: ToothPhoto[]
   dentists: DentistOption[]
+  treatmentRecords: TreatmentRecordRow[]
+  payments: PaymentRow[]
+  sponsors: SponsorRow[]
 }
 
 export function PatientDetailsView({
   patient,
-  appointments,
   notes = [],
   dentalChart,
   branches,
   photos,
   dentists,
+  treatmentRecords,
+  payments,
+  sponsors,
 }: PatientDetailsViewProps) {
   const profile = getPatientProfile(patient)
-  const dentalHistory =
-    appointments && appointments.length > 0
-      ? appointmentsToDentalHistory(patient.id, appointments)
-      : []
-  const paymentHistory = getPaymentHistory(patient)
 
   return (
     <>
@@ -59,7 +56,7 @@ export function PatientDetailsView({
         Back to Patients
       </Link>
 
-      <PatientHeaderCard patient={patient} profile={profile} />
+      <PatientHeaderCard patient={patient} profile={profile} sponsors={sponsors} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <PatientAboutCard about={profile.about} />
@@ -69,12 +66,12 @@ export function PatientDetailsView({
 
       <MedicalRecordsTabs
         patientId={patient.id}
-        dentalHistory={dentalHistory}
+        treatmentRecords={treatmentRecords}
         dentalChart={dentalChart}
         branches={branches}
         photos={photos}
         dentists={dentists}
-        paymentHistory={paymentHistory}
+        payments={payments}
       />
     </>
   )

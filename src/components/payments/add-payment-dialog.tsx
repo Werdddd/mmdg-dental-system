@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -19,68 +20,80 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { PatientPicker } from '@/components/shared/patient-picker'
-import { DentistPicker } from '@/components/shared/dentist-picker'
-import { TREATMENTS } from '@/components/shared/clinic-roster'
-import type {
-  PaymentMethod,
-  PaymentRow,
-  PaymentStatus,
-} from '@/components/payments/data'
+import type { InvoiceRow } from '@/components/invoices/data'
 import type { PatientRow } from '@/components/patients/data'
-import type { DentistOption } from '@/lib/data/dentists'
-import { addPaymentAction } from '@/app/(app)/payments/actions'
+import type { PaymentMethod, PaymentRow } from '@/components/payments/data'
+import type { SponsorRow } from '@/lib/data/sponsors'
+import { formatCurrency } from '@/lib/utils'
+import { recordPaymentAction } from '@/app/(app)/payments/actions'
 
-const METHODS: PaymentMethod[] = ['Cash', 'Card', 'Bank', 'GCash', 'Maya']
-const STATUSES: PaymentStatus[] = [
-  'Paid',
-  'Partially Paid',
-  'Unpaid',
-  'Refunded',
+const METHODS: PaymentMethod[] = [
+  'Cash',
+  'Card',
+  'Bank',
+  'GCash',
+  'Maya',
+  'Sponsored',
+  'Pro Bono',
 ]
 
 interface AddPaymentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  invoices: InvoiceRow[]
   patients: PatientRow[]
-  dentists: DentistOption[]
+  sponsors: SponsorRow[]
   onAdd: (payment: PaymentRow) => void
 }
 
 export function AddPaymentDialog({
   open,
   onOpenChange,
+  invoices,
   patients,
-  dentists,
+  sponsors,
   onAdd,
 }: AddPaymentDialogProps) {
-  const [patientId, setPatientId] = useState('')
-  const [service, setService] = useState<string>(TREATMENTS[0])
-  const [dentistId, setDentistId] = useState(dentists[0]?.id ?? '')
-  const [date, setDate] = useState('')
+  const router = useRouter()
+  const [invoiceId, setInvoiceId] = useState('')
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState<PaymentMethod>('Cash')
-  const [status, setStatus] = useState<PaymentStatus>('Paid')
+  const [sponsorId, setSponsorId] = useState('')
+  const [date, setDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const selectedInvoice = invoices.find((inv) => inv.rawId === invoiceId)
+
   function resetForm() {
-    setPatientId('')
-    setService(TREATMENTS[0])
-    setDentistId(dentists[0]?.id ?? '')
-    setDate('')
+    setInvoiceId('')
     setAmount('')
     setMethod('Cash')
-    setStatus('Paid')
+    setSponsorId('')
+    setDate('')
     setError(null)
   }
 
+  function handleInvoiceChange(rawId: string) {
+    setInvoiceId(rawId)
+    const invoice = invoices.find((inv) => inv.rawId === rawId)
+    setAmount(invoice ? String(invoice.balance) : '')
+
+    const patient = patients.find((p) => p.id === invoice?.patientId)
+    if (patient?.sponsorship) {
+      setSponsorId(patient.sponsorship.sponsorId)
+    }
+  }
+
+  const amountValue = Number(amount)
   const canSubmit =
-    patientId.length > 0 &&
-    dentistId.length > 0 &&
-    date.length > 0 &&
+    invoiceId.length > 0 &&
     amount.trim().length > 0 &&
-    Number(amount) > 0 &&
+    amountValue > 0 &&
+    selectedInvoice != null &&
+    amountValue <= selectedInvoice.balance &&
+    date.length > 0 &&
+    (method !== 'Sponsored' || sponsorId.length > 0) &&
     !isSubmitting
 
   async function handleSubmit() {
@@ -89,20 +102,19 @@ export function AddPaymentDialog({
     setIsSubmitting(true)
     setError(null)
     try {
-      const payment = await addPaymentAction({
-        patientId,
-        dentistId,
-        treatment: service,
-        date,
-        amount: Number(amount),
+      const payment = await recordPaymentAction({
+        invoiceId,
+        amount: amountValue,
         method,
-        status,
+        sponsorId: method === 'Sponsored' ? sponsorId : null,
+        date,
       })
       onAdd(payment)
       resetForm()
       onOpenChange(false)
+      router.refresh()
     } catch {
-      setError('Could not add payment. Please try again.')
+      setError('Could not record payment. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -119,42 +131,44 @@ export function AddPaymentDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>New Payment</DialogTitle>
-          <DialogDescription>Record a new patient payment.</DialogDescription>
+          <DialogDescription>
+            Record a payment against an existing invoice.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <PatientPicker
-            patients={patients}
-            value={patientId}
-            onValueChange={setPatientId}
-          />
-
           <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Service/Treatment
-            </label>
-            <Select
-              value={service}
-              onValueChange={(value) => value && setService(value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TREATMENTS.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="mb-1.5 block text-sm font-medium">Invoice</label>
+            {invoices.length === 0 ? (
+              <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                No outstanding invoices — generate an invoice first.
+              </p>
+            ) : (
+              <Select
+                value={invoiceId}
+                onValueChange={(value) => value && handleInvoiceChange(value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {(id: string) => {
+                      const invoice = invoices.find((inv) => inv.rawId === id)
+                      return invoice
+                        ? `${invoice.id} — ${invoice.patient.name} — Balance ${formatCurrency(invoice.balance)}`
+                        : 'Select an invoice'
+                    }}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {invoices.map((invoice) => (
+                    <SelectItem key={invoice.rawId} value={invoice.rawId}>
+                      {invoice.id} — {invoice.patient.name} — Balance{' '}
+                      {formatCurrency(invoice.balance)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
-
-          <DentistPicker
-            dentists={dentists}
-            value={dentistId}
-            onValueChange={setDentistId}
-          />
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -174,57 +188,73 @@ export function AddPaymentDialog({
               <Input
                 type="number"
                 min={0}
+                max={selectedInvoice?.balance}
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 placeholder="1500"
               />
+              {selectedInvoice && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Remaining balance: {formatCurrency(selectedInvoice.balance)}
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">
+              Payment Method
+            </label>
+            <Select
+              value={method}
+              onValueChange={(value) => value && setMethod(value as PaymentMethod)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {METHODS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {method === 'Sponsored' && (
             <div>
               <label className="mb-1.5 block text-sm font-medium">
-                Payment Method
+                Sponsor
               </label>
-              <Select
-                value={method}
-                onValueChange={(value) =>
-                  value && setMethod(value as PaymentMethod)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {sponsors.length === 0 ? (
+                <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                  No sponsors yet — add one from the Sponsors page first.
+                </p>
+              ) : (
+                <Select
+                  value={sponsorId}
+                  onValueChange={(value) => value && setSponsorId(value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue>
+                      {(id: string) =>
+                        sponsors.find((s) => s.id === id)?.name ??
+                        'Select a sponsor'
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sponsors.map((sponsor) => (
+                      <SelectItem key={sponsor.id} value={sponsor.id}>
+                        {sponsor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Status</label>
-              <Select
-                value={status}
-                onValueChange={(value) =>
-                  value && setStatus(value as PaymentStatus)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          )}
 
           {error && (
             <p className="text-sm text-destructive" role="alert">
@@ -238,7 +268,7 @@ export function AddPaymentDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
-            {isSubmitting ? 'Adding…' : 'Add Payment'}
+            {isSubmitting ? 'Recording…' : 'Record Payment'}
           </Button>
         </DialogFooter>
       </DialogContent>

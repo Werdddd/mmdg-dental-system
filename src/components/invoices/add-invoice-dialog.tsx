@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -12,35 +13,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { PatientPicker } from '@/components/shared/patient-picker'
-import { TREATMENTS } from '@/components/shared/clinic-roster'
-import {
-  TAX_RATE,
-  type InvoiceRow,
-  type InvoiceStatus,
-} from '@/components/invoices/data'
+import type { InvoiceRow } from '@/components/invoices/data'
 import type { PatientRow } from '@/components/patients/data'
+import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
 import { formatCurrency } from '@/lib/utils'
-import { addInvoiceAction } from '@/app/(app)/invoices/actions'
-
-const STATUSES: InvoiceStatus[] = [
-  'Paid',
-  'Partially Paid',
-  'Overdue',
-  'Unpaid',
-]
+import { generateInvoiceAction } from '@/app/(app)/invoices/actions'
 
 interface AddInvoiceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   patients: PatientRow[]
+  pendingTreatments: TreatmentRecordRow[]
   onAdd: (invoice: InvoiceRow) => void
 }
 
@@ -48,30 +32,49 @@ export function AddInvoiceDialog({
   open,
   onOpenChange,
   patients,
+  pendingTreatments,
   onAdd,
 }: AddInvoiceDialogProps) {
+  const router = useRouter()
   const [patientId, setPatientId] = useState('')
-  const [treatment, setTreatment] = useState<string>(TREATMENTS[0])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [dueDate, setDueDate] = useState('')
-  const [subtotal, setSubtotal] = useState('')
-  const [status, setStatus] = useState<InvoiceStatus>('Unpaid')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const patientTreatments = useMemo(
+    () => pendingTreatments.filter((t) => t.patientId === patientId),
+    [pendingTreatments, patientId],
+  )
+
   function resetForm() {
     setPatientId('')
-    setTreatment(TREATMENTS[0])
+    setSelectedIds([])
     setDueDate('')
-    setSubtotal('')
-    setStatus('Unpaid')
     setError(null)
   }
 
+  function handlePatientChange(id: string) {
+    setPatientId(id)
+    setSelectedIds(
+      pendingTreatments.filter((t) => t.patientId === id).map((t) => t.id),
+    )
+  }
+
+  function toggleTreatment(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    )
+  }
+
+  const subtotal = patientTreatments
+    .filter((t) => selectedIds.includes(t.id))
+    .reduce((sum, t) => sum + t.cost, 0)
+
   const canSubmit =
     patientId.length > 0 &&
+    selectedIds.length > 0 &&
     dueDate.length > 0 &&
-    subtotal.trim().length > 0 &&
-    Number(subtotal) > 0 &&
     !isSubmitting
 
   async function handleSubmit() {
@@ -80,18 +83,17 @@ export function AddInvoiceDialog({
     setIsSubmitting(true)
     setError(null)
     try {
-      const invoice = await addInvoiceAction({
+      const invoice = await generateInvoiceAction({
         patientId,
-        treatment,
+        treatmentRecordIds: selectedIds,
         dueDate,
-        subtotal: Number(subtotal),
-        status,
       })
       onAdd(invoice)
       resetForm()
       onOpenChange(false)
+      router.refresh()
     } catch {
-      setError('Could not add invoice. Please try again.')
+      setError('Could not generate invoice. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -109,7 +111,7 @@ export function AddInvoiceDialog({
         <DialogHeader>
           <DialogTitle>New Invoice</DialogTitle>
           <DialogDescription>
-            Create a new invoice for a patient treatment.
+            Generate an invoice from a patient&apos;s pending treatments.
           </DialogDescription>
         </DialogHeader>
 
@@ -117,83 +119,66 @@ export function AddInvoiceDialog({
           <PatientPicker
             patients={patients}
             value={patientId}
-            onValueChange={setPatientId}
+            onValueChange={handlePatientChange}
           />
+
+          {patientId && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">
+                Pending Treatments
+              </label>
+              {patientTreatments.length === 0 ? (
+                <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                  This patient has no pending treatments to invoice. Log a
+                  treatment from the patient&apos;s dental chart first.
+                </p>
+              ) : (
+                <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border p-2">
+                  {patientTreatments.map((treatment) => (
+                    <label
+                      key={treatment.id}
+                      className="flex items-center justify-between gap-2 rounded-md p-2 text-sm hover:bg-muted"
+                    >
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          className="size-4 accent-primary"
+                          checked={selectedIds.includes(treatment.id)}
+                          onChange={() => toggleTreatment(treatment.id)}
+                        />
+                        <span>
+                          {treatment.treatment}
+                          {treatment.tooth ? ` — Tooth #${treatment.tooth}` : ''}
+                          <span className="text-muted-foreground">
+                            {' '}
+                            · {treatment.dentist}
+                          </span>
+                        </span>
+                      </span>
+                      <span className="font-medium whitespace-nowrap">
+                        {formatCurrency(treatment.cost)}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="mb-1.5 block text-sm font-medium">
-              Treatment/Procedure
+              Due Date
             </label>
-            <Select
-              value={treatment}
-              onValueChange={(value) => value && setTreatment(value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TREATMENTS.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(event) => setDueDate(event.target.value)}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Due Date
-              </label>
-              <Input
-                type="date"
-                value={dueDate}
-                onChange={(event) => setDueDate(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Subtotal (₱)
-              </label>
-              <Input
-                type="number"
-                min={0}
-                value={subtotal}
-                onChange={(event) => setSubtotal(event.target.value)}
-                placeholder="1500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">Status</label>
-            <Select
-              value={status}
-              onValueChange={(value) =>
-                value && setStatus(value as InvoiceStatus)
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {subtotal.trim().length > 0 && Number(subtotal) > 0 && (
+          {selectedIds.length > 0 && (
             <p className="text-sm text-muted-foreground">
-              Tax (12%):{' '}
-              {formatCurrency(Math.round(Number(subtotal) * TAX_RATE))} · Total:{' '}
-              {formatCurrency(
-                Number(subtotal) + Math.round(Number(subtotal) * TAX_RATE),
-              )}
+              Total: {formatCurrency(subtotal)}
             </p>
           )}
 
@@ -209,7 +194,7 @@ export function AddInvoiceDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
-            {isSubmitting ? 'Adding…' : 'Add Invoice'}
+            {isSubmitting ? 'Generating…' : 'Generate Invoice'}
           </Button>
         </DialogFooter>
       </DialogContent>

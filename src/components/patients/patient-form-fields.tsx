@@ -7,8 +7,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import type { PatientRow } from '@/components/patients/data'
+import type { PatientRow, PatientType } from '@/components/patients/data'
 import type { NewPatientInput, UpdatePatientInput } from '@/lib/data/patients'
+import type { SponsorRow, SetPatientSponsorshipInput } from '@/lib/data/sponsors'
 
 const GENDERS: PatientRow['gender'][] = ['Male', 'Female']
 const CIVIL_STATUSES = ['Single', 'Married', 'Widowed', 'Separated']
@@ -21,6 +22,7 @@ const EMERGENCY_RELATIONS = [
   'Friend',
   'Other',
 ]
+const PATIENT_TYPES: PatientType[] = ['Regular', 'Sponsored', 'Pro Bono']
 
 export interface PatientFormValues {
   fullName: string
@@ -38,6 +40,9 @@ export interface PatientFormValues {
   symptoms: string
   affectedArea: string
   complaintRemarks: string
+  patientType: PatientType
+  sponsorId: string
+  coveragePercentage: string
 }
 
 export const EMPTY_PATIENT_FORM_VALUES: PatientFormValues = {
@@ -56,6 +61,9 @@ export const EMPTY_PATIENT_FORM_VALUES: PatientFormValues = {
   symptoms: '',
   affectedArea: '',
   complaintRemarks: '',
+  patientType: 'Regular',
+  sponsorId: '',
+  coveragePercentage: '',
 }
 
 export function patientToFormValues(patient: PatientRow): PatientFormValues {
@@ -75,6 +83,11 @@ export function patientToFormValues(patient: PatientRow): PatientFormValues {
     symptoms: patient.chiefComplaint.symptoms,
     affectedArea: patient.chiefComplaint.affectedArea,
     complaintRemarks: patient.chiefComplaint.remarks,
+    patientType: patient.patientType,
+    sponsorId: patient.sponsorship?.sponsorId ?? '',
+    coveragePercentage: patient.sponsorship
+      ? String(patient.sponsorship.coveragePercentage)
+      : '',
   }
 }
 
@@ -97,12 +110,26 @@ export function formValuesToInput(
     symptoms: values.symptoms.trim(),
     affectedArea: values.affectedArea.trim(),
     complaintRemarks: values.complaintRemarks.trim(),
+    patientType: values.patientType,
+  }
+}
+
+export function formValuesToSponsorship(
+  values: PatientFormValues,
+): SetPatientSponsorshipInput | undefined {
+  if (values.patientType !== 'Sponsored' || !values.sponsorId) return undefined
+  return {
+    sponsorId: values.sponsorId,
+    coveragePercentage: values.coveragePercentage.trim()
+      ? Number(values.coveragePercentage)
+      : 100,
   }
 }
 
 interface PatientFormFieldsProps {
   values: PatientFormValues
   onChange: (patch: Partial<PatientFormValues>) => void
+  sponsors: SponsorRow[]
 }
 
 function Field({
@@ -138,9 +165,82 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export function PatientFormFields({
   values,
   onChange,
+  sponsors,
 }: PatientFormFieldsProps) {
   return (
     <div className="space-y-5">
+      <div className="space-y-4">
+        <SectionLabel>Billing</SectionLabel>
+        <Field label="Patient Type">
+          <Select
+            value={values.patientType}
+            onValueChange={(value) =>
+              value && onChange({ patientType: value as PatientType })
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PATIENT_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        {values.patientType === 'Sponsored' && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Sponsor">
+              {sponsors.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No sponsors yet — add one from the Sponsors page.
+                </p>
+              ) : (
+                <Select
+                  value={values.sponsorId || undefined}
+                  onValueChange={(value) => {
+                    if (!value) return
+                    const sponsor = sponsors.find((s) => s.id === value)
+                    onChange({
+                      sponsorId: value,
+                      coveragePercentage:
+                        values.coveragePercentage ||
+                        String(sponsor?.defaultCoveragePercentage ?? 100),
+                    })
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sponsors.map((sponsor) => (
+                      <SelectItem key={sponsor.id} value={sponsor.id}>
+                        {sponsor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </Field>
+            <Field label="Coverage %">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={values.coveragePercentage}
+                onChange={(e) =>
+                  onChange({ coveragePercentage: e.target.value })
+                }
+                placeholder="100"
+              />
+            </Field>
+          </div>
+        )}
+      </div>
+
       <div className="space-y-4">
         <Field label="Full Name">
           <Input

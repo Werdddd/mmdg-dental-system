@@ -4,12 +4,14 @@ import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
 import { getActiveClinicId } from '@/lib/data/clinic'
-import { createPayment, type NewPaymentInput } from '@/lib/data/payments'
+import { recordPayment, type NewPaymentInput } from '@/lib/data/payments'
 
-export async function addPaymentAction(input: NewPaymentInput) {
+export async function recordPaymentAction(input: NewPaymentInput) {
   const clinicId = await getActiveClinicId()
   const supabase = await createClient()
-  const payment = await createPayment(supabase, clinicId, input)
+  const payment = await recordPayment(supabase, clinicId, input)
   revalidatePath('/payments')
+  revalidatePath('/invoices')
+  revalidatePath(`/patients/${payment.patientId}`)
   return payment
 }

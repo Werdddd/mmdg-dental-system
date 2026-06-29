@@ -15,15 +15,21 @@ import {
 } from '@/components/invoices/invoices-toolbar'
 import { type InvoiceRow } from '@/components/invoices/data'
 import type { PatientRow } from '@/components/patients/data'
+import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
 interface InvoicesViewProps {
   initialInvoices: InvoiceRow[]
   patients: PatientRow[]
+  pendingTreatments: TreatmentRecordRow[]
 }
 
-export function InvoicesView({ initialInvoices, patients }: InvoicesViewProps) {
+export function InvoicesView({
+  initialInvoices,
+  patients,
+  pendingTreatments,
+}: InvoicesViewProps) {
   const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
   const [invoices, setInvoices] = useState<InvoiceRow[]>(initialInvoices)
   const [search, setSearch] = useState('')
@@ -39,7 +45,9 @@ export function InvoicesView({ initialInvoices, patients }: InvoicesViewProps) {
           (invoice) =>
             invoice.patient.name.toLowerCase().includes(query) ||
             invoice.id.toLowerCase().includes(query) ||
-            invoice.treatment.toLowerCase().includes(query),
+            invoice.items.some((item) =>
+              item.description.toLowerCase().includes(query),
+            ),
         )
       : [...invoices]
 
@@ -132,6 +140,7 @@ export function InvoicesView({ initialInvoices, patients }: InvoicesViewProps) {
         open={addOpen}
         onOpenChange={setAddOpen}
         patients={patients}
+        pendingTreatments={pendingTreatments}
         onAdd={handleAddInvoice}
       />
     </>

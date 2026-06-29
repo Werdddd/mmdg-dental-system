@@ -1,4 +1,4 @@
-import { Banknote, CheckCircle2, Clock, RotateCcw } from 'lucide-react'
+import { Banknote, CheckCircle2, HeartHandshake, RotateCcw } from 'lucide-react'
 
 import { StatCard } from '@/components/dashboard/stat-card'
 import {
@@ -23,16 +23,16 @@ export function PaymentsSummaryCards({ payments }: PaymentsSummaryCardsProps) {
         helperText="collected to date"
       />
       <StatCard
-        label="Paid Payments"
+        label="Completed Payments"
         value={String(summary.paidCount)}
         icon={CheckCircle2}
         helperText="completed transactions"
       />
       <StatCard
-        label="Pending Payments"
-        value={String(summary.pendingCount)}
-        icon={Clock}
-        helperText="unpaid or partial"
+        label="Sponsored / Pro Bono"
+        value={formatCurrency(summary.coverageAmount)}
+        icon={HeartHandshake}
+        helperText="covered on patients' behalf"
       />
       <StatCard
         label="Refunded Amount"
