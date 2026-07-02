@@ -10,7 +10,6 @@ import { getToothPhotos } from '@/lib/data/dental-chart-photos'
 import { getDentists } from '@/lib/data/dentists'
 import { getTreatmentRecordsForPatient } from '@/lib/data/treatment-records'
 import { getPaymentsForPatient } from '@/lib/data/payments'
-import { getSponsors } from '@/lib/data/sponsors'
 import { PatientDetailsView } from '@/components/patients/details/patient-details-view'
 
 export default async function PatientDetailsPage({
@@ -31,7 +30,6 @@ export default async function PatientDetailsPage({
     dentists,
     treatmentRecords,
     payments,
-    sponsors,
   ] = await Promise.all([
     getPatientById(supabase, clinicId, id),
     getPatientNotes(supabase, clinicId, id),
@@ -41,7 +39,6 @@ export default async function PatientDetailsPage({
     getDentists(supabase, clinicId),
     getTreatmentRecordsForPatient(supabase, clinicId, id),
     getPaymentsForPatient(supabase, clinicId, id),
-    getSponsors(supabase, clinicId),
   ])
 
   if (!patient) {
@@ -58,7 +55,6 @@ export default async function PatientDetailsPage({
       dentists={dentists}
       treatmentRecords={treatmentRecords}
       payments={payments}
-      sponsors={sponsors}
     />
   )
 }

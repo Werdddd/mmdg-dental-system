@@ -14,17 +14,15 @@ import {
 } from '@/components/patients/patients-toolbar'
 import { PatientCard } from '@/components/patients/patient-card'
 import { formatPatientCode, type PatientRow } from '@/components/patients/data'
-import type { SponsorRow } from '@/lib/data/sponsors'
 import { cn } from '@/lib/utils'
 
 const PAGE_SIZE_OPTIONS = ['8', '12', '24', '48']
 
 interface PatientsViewProps {
   initialPatients: PatientRow[]
-  sponsors: SponsorRow[]
 }
 
-export function PatientsView({ initialPatients, sponsors }: PatientsViewProps) {
+export function PatientsView({ initialPatients }: PatientsViewProps) {
   const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
   const [patients, setPatients] = useState<PatientRow[]>(initialPatients)
   const [search, setSearch] = useState('')
@@ -151,7 +149,6 @@ export function PatientsView({ initialPatients, sponsors }: PatientsViewProps) {
       <AddPatientDialog
         open={addOpen}
         onOpenChange={setAddOpen}
-        sponsors={sponsors}
         onAdd={handleAddPatient}
       />
     </>

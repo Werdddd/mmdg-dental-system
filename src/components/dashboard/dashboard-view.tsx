@@ -20,7 +20,6 @@ import type { PatientRow } from '@/components/patients/data'
 import type { InvoiceRow } from '@/components/invoices/data'
 import type { DentistOption } from '@/lib/data/dentists'
 import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
-import type { SponsorRow } from '@/lib/data/sponsors'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -72,7 +71,6 @@ interface DashboardViewProps {
   dentists: DentistOption[]
   invoicesWithBalance: InvoiceRow[]
   pendingTreatments: TreatmentRecordRow[]
-  sponsors: SponsorRow[]
   profileName: string
 }
 
@@ -82,7 +80,6 @@ export function DashboardView({
   dentists,
   invoicesWithBalance,
   pendingTreatments,
-  sponsors,
   profileName,
 }: DashboardViewProps) {
   const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
@@ -206,7 +203,6 @@ export function DashboardView({
       <AddPatientDialog
         open={patientOpen}
         onOpenChange={setPatientOpen}
-        sponsors={sponsors}
         onAdd={() => setPatientOpen(false)}
       />
       <AddInvoiceDialog
@@ -220,8 +216,6 @@ export function DashboardView({
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
         invoices={invoicesWithBalance}
-        patients={patients}
-        sponsors={sponsors}
         onAdd={() => setPaymentOpen(false)}
       />
     </>

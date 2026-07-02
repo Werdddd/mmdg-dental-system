@@ -1,5 +1,3 @@
-export type PatientType = 'Regular' | 'Sponsored' | 'Pro Bono'
-
 export interface EmergencyContact {
   name: string
   relation: string
@@ -11,13 +9,6 @@ export interface ChiefComplaint {
   symptoms: string
   affectedArea: string
   remarks: string
-}
-
-export interface PatientSponsorshipInfo {
-  sponsorId: string
-  sponsorName: string
-  coveragePercentage: number
-  coverageCap: number | null
 }
 
 export function formatPatientCode(patientNumber: number) {
@@ -44,8 +35,6 @@ export interface PatientRow {
   civilStatus: string
   emergencyContact: EmergencyContact
   chiefComplaint: ChiefComplaint
-  patientType: PatientType
-  sponsorship: PatientSponsorshipInfo | null
 }
 
 function isThisMonth(dateStr: string, referenceDate: Date) {

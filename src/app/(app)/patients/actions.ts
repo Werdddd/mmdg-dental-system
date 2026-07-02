@@ -32,23 +32,12 @@ import {
   createTreatmentRecord,
   type NewTreatmentRecordInput,
 } from '@/lib/data/treatment-records'
-import {
-  setPatientSponsorship,
-  clearPatientSponsorship,
-  type SetPatientSponsorshipInput,
-} from '@/lib/data/sponsors'
 import type { ClinicBranch } from '@/lib/dental/branches'
 
-export async function addPatientAction(
-  input: NewPatientInput,
-  sponsorship?: SetPatientSponsorshipInput,
-) {
+export async function addPatientAction(input: NewPatientInput) {
   const clinicId = await getActiveClinicId()
   const supabase = await createClient()
   const patient = await createPatient(supabase, clinicId, input)
-  if (input.patientType === 'Sponsored' && sponsorship) {
-    await setPatientSponsorship(supabase, clinicId, patient.id, sponsorship)
-  }
   revalidatePath('/patients')
   return patient
 }
@@ -56,16 +45,10 @@ export async function addPatientAction(
 export async function updatePatientAction(
   patientId: string,
   input: UpdatePatientInput,
-  sponsorship?: SetPatientSponsorshipInput,
 ) {
   const clinicId = await getActiveClinicId()
   const supabase = await createClient()
   const patient = await updatePatient(supabase, clinicId, patientId, input)
-  if (input.patientType === 'Sponsored' && sponsorship) {
-    await setPatientSponsorship(supabase, clinicId, patientId, sponsorship)
-  } else if (input.patientType !== 'Sponsored') {
-    await clearPatientSponsorship(supabase, patientId)
-  }
   revalidatePath('/patients')
   revalidatePath(`/patients/${patientId}`)
   return patient

@@ -13,7 +13,6 @@ import type { ClinicBranch } from '@/lib/dental/branches'
 import type { DentistOption } from '@/lib/data/dentists'
 import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
 import type { PaymentRow } from '@/components/payments/data'
-import type { SponsorRow } from '@/lib/data/sponsors'
 import { getPatientProfile } from '@/components/patients/details/data'
 import { PatientHeaderCard } from '@/components/patients/details/patient-header-card'
 import { PatientAboutCard } from '@/components/patients/details/patient-about-card'
@@ -30,7 +29,6 @@ interface PatientDetailsViewProps {
   dentists: DentistOption[]
   treatmentRecords: TreatmentRecordRow[]
   payments: PaymentRow[]
-  sponsors: SponsorRow[]
 }
 
 export function PatientDetailsView({
@@ -42,7 +40,6 @@ export function PatientDetailsView({
   dentists,
   treatmentRecords,
   payments,
-  sponsors,
 }: PatientDetailsViewProps) {
   const profile = getPatientProfile(patient)
 
@@ -56,7 +53,7 @@ export function PatientDetailsView({
         Back to Patients
       </Link>
 
-      <PatientHeaderCard patient={patient} profile={profile} sponsors={sponsors} />
+      <PatientHeaderCard patient={patient} profile={profile} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <PatientAboutCard about={profile.about} />

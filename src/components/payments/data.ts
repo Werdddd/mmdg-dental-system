@@ -1,11 +1,4 @@
-export type PaymentMethod =
-  | 'Cash'
-  | 'Card'
-  | 'Bank'
-  | 'GCash'
-  | 'Maya'
-  | 'Sponsored'
-  | 'Pro Bono'
+export type PaymentMethod = 'Cash' | 'Bank' | 'GCash' | 'Sponsored' | 'Pro Bono'
 
 export type PaymentStatus = 'Paid' | 'Refunded'
 
@@ -21,8 +14,10 @@ export interface PaymentRow {
   amount: number
   method: PaymentMethod
   status: PaymentStatus
-  sponsorName: string | null
   invoiceBalance: number
+  bankName: string | null
+  referenceNumber: string | null
+  proofPhotoUrl: string | null
 }
 
 export function computePaymentsSummary(payments: PaymentRow[]) {

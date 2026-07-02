@@ -1,8 +1,4 @@
-import {
-  formatPatientCode,
-  type PatientRow,
-  type PatientType,
-} from '@/components/patients/data'
+import { formatPatientCode, type PatientRow } from '@/components/patients/data'
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, formatMonthDay, initialsOf } from '@/lib/utils'
 
@@ -26,26 +22,15 @@ interface PatientQueryRow {
   symptoms: string | null
   affected_area: string | null
   complaint_remarks: string | null
-  patient_type: PatientType
   appointments: { scheduled_at: string; notes: string | null }[] | null
-  patient_sponsorships:
-    | {
-        sponsor_id: string
-        coverage_percentage: string | number
-        coverage_cap: string | number | null
-        valid_to: string | null
-        sponsor: { name: string } | null
-      }[]
-    | null
 }
 
 const SELECT = `
   id, patient_number, full_name, gender, birthday, address, phone, treatment_status, created_at,
   email, nationality, civil_status,
   emergency_contact_name, emergency_contact_relation, emergency_contact_phone,
-  chief_complaint, symptoms, affected_area, complaint_remarks, patient_type,
-  appointments ( scheduled_at, notes ),
-  patient_sponsorships ( sponsor_id, coverage_percentage, coverage_cap, valid_to, sponsor:sponsors ( name ) )
+  chief_complaint, symptoms, affected_area, complaint_remarks,
+  appointments ( scheduled_at, notes )
 `
 
 function computeAge(birthday: string) {
@@ -65,22 +50,7 @@ function mapPatientRow(row: PatientQueryRow): PatientRow {
       new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime(),
   )[0]
 
-  const activeSponsorship =
-    (row.patient_sponsorships ?? []).find((s) => s.valid_to === null) ?? null
-
   return {
-    patientType: row.patient_type,
-    sponsorship: activeSponsorship
-      ? {
-          sponsorId: activeSponsorship.sponsor_id,
-          sponsorName: activeSponsorship.sponsor?.name ?? 'Unknown Sponsor',
-          coveragePercentage: Number(activeSponsorship.coverage_percentage),
-          coverageCap:
-            activeSponsorship.coverage_cap != null
-              ? Number(activeSponsorship.coverage_cap)
-              : null,
-        }
-      : null,
     id: row.id,
     patientNumber: row.patient_number,
     name: row.full_name,
@@ -160,7 +130,6 @@ export interface NewPatientInput extends PatientProfileInput {
   gender: 'Male' | 'Female'
   birthday: string
   address: string
-  patientType: PatientType
 }
 
 export interface UpdatePatientInput extends PatientProfileInput {
@@ -169,7 +138,6 @@ export interface UpdatePatientInput extends PatientProfileInput {
   gender: 'Male' | 'Female'
   birthday: string
   address: string
-  patientType: PatientType
 }
 
 function profileColumns(input: PatientProfileInput) {
@@ -220,7 +188,6 @@ export async function createPatient(
       gender: input.gender,
       birthday: input.birthday,
       address: input.address,
-      patient_type: input.patientType,
       ...profileColumns(input),
     })
     .select(SELECT)
@@ -244,7 +211,6 @@ export async function updatePatient(
       gender: input.gender,
       birthday: input.birthday,
       address: input.address,
-      patient_type: input.patientType,
       ...profileColumns(input),
     })
     .eq('clinic_id', clinicId)

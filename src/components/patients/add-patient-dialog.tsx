@@ -16,23 +16,19 @@ import {
   EMPTY_PATIENT_FORM_VALUES,
   PatientFormFields,
   formValuesToInput,
-  formValuesToSponsorship,
   type PatientFormValues,
 } from '@/components/patients/patient-form-fields'
-import type { SponsorRow } from '@/lib/data/sponsors'
 import { addPatientAction } from '@/app/(app)/patients/actions'
 
 interface AddPatientDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  sponsors: SponsorRow[]
   onAdd: (patient: PatientRow) => void
 }
 
 export function AddPatientDialog({
   open,
   onOpenChange,
-  sponsors,
   onAdd,
 }: AddPatientDialogProps) {
   const [values, setValues] = useState<PatientFormValues>(
@@ -59,10 +55,7 @@ export function AddPatientDialog({
     setIsSubmitting(true)
     setError(null)
     try {
-      const patient = await addPatientAction(
-        formValuesToInput(values),
-        formValuesToSponsorship(values),
-      )
+      const patient = await addPatientAction(formValuesToInput(values))
       onAdd(patient)
       resetForm()
       onOpenChange(false)
@@ -92,7 +85,6 @@ export function AddPatientDialog({
         <PatientFormFields
           values={values}
           onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
-          sponsors={sponsors}
         />
 
         {error && (

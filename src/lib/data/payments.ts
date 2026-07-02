@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto'
+
 import type {
   PaymentMethod,
   PaymentRow,
@@ -5,6 +7,9 @@ import type {
 } from '@/components/payments/data'
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, initialsOf } from '@/lib/utils'
+
+const PROOF_BUCKET = 'payment-proofs'
+const SIGNED_URL_TTL_SECONDS = 60 * 60
 
 interface PaymentQueryRow {
   id: string
@@ -15,8 +20,10 @@ interface PaymentQueryRow {
   paid_at: string
   invoice_id: string
   patient_id: string
+  bank_name: string | null
+  reference_number: string | null
+  proof_photo_path: string | null
   patient: { full_name: string; phone: string | null } | null
-  sponsor: { name: string } | null
   invoice: {
     invoice_number: number
     balance: string | number
@@ -29,15 +36,18 @@ interface PaymentQueryRow {
 
 const SELECT = `
   id, payment_number, method, amount, status, paid_at, invoice_id, patient_id,
+  bank_name, reference_number, proof_photo_path,
   patient:patients ( full_name, phone ),
-  sponsor:sponsors ( name ),
   invoice:invoices (
     invoice_number, balance,
     invoice_items ( description, treatment_record:treatment_records ( dentist:profiles ( full_name ) ) )
   )
 `
 
-function mapPaymentRow(row: PaymentQueryRow): PaymentRow {
+function mapPaymentRow(
+  row: PaymentQueryRow,
+  proofPhotoUrl: string | null,
+): PaymentRow {
   const items = row.invoice?.invoice_items ?? []
   const service =
     items.length === 0
@@ -76,9 +86,40 @@ function mapPaymentRow(row: PaymentQueryRow): PaymentRow {
     amount: Number(row.amount),
     method: row.method,
     status: row.status,
-    sponsorName: row.sponsor?.name ?? null,
     invoiceBalance: row.invoice ? Number(row.invoice.balance) : 0,
+    bankName: row.bank_name,
+    referenceNumber: row.reference_number,
+    proofPhotoUrl,
   }
+}
+
+async function mapPaymentRows(
+  supabase: SupabaseServerClient,
+  rows: PaymentQueryRow[],
+): Promise<PaymentRow[]> {
+  const pathsToSign = rows
+    .map((row) => row.proof_photo_path)
+    .filter((path): path is string => Boolean(path))
+
+  const signedUrlByPath = new Map<string, string>()
+  if (pathsToSign.length > 0) {
+    const { data: signed, error } = await supabase.storage
+      .from(PROOF_BUCKET)
+      .createSignedUrls(pathsToSign, SIGNED_URL_TTL_SECONDS)
+    if (error) throw error
+    signed?.forEach((s, i) => {
+      if (s.signedUrl) signedUrlByPath.set(pathsToSign[i], s.signedUrl)
+    })
+  }
+
+  return rows.map((row) =>
+    mapPaymentRow(
+      row,
+      row.proof_photo_path
+        ? (signedUrlByPath.get(row.proof_photo_path) ?? null)
+        : null,
+    ),
+  )
 }
 
 export async function getPayments(
@@ -92,7 +133,7 @@ export async function getPayments(
     .order('paid_at', { ascending: false })
 
   if (error) throw error
-  return ((data ?? []) as unknown as PaymentQueryRow[]).map(mapPaymentRow)
+  return mapPaymentRows(supabase, (data ?? []) as unknown as PaymentQueryRow[])
 }
 
 export async function getPaymentsForPatient(
@@ -108,7 +149,7 @@ export async function getPaymentsForPatient(
     .order('paid_at', { ascending: false })
 
   if (error) throw error
-  return ((data ?? []) as unknown as PaymentQueryRow[]).map(mapPaymentRow)
+  return mapPaymentRows(supabase, (data ?? []) as unknown as PaymentQueryRow[])
 }
 
 export async function getRevenueByClinic(
@@ -132,8 +173,10 @@ export interface NewPaymentInput {
   invoiceId: string
   amount: number
   method: PaymentMethod
-  sponsorId?: string | null
   date: string
+  bankName?: string | null
+  referenceNumber?: string | null
+  proofPhotoPath?: string | null
 }
 
 export async function recordPayment(
@@ -156,9 +199,6 @@ export async function recordPayment(
   if (input.amount > Number(invoice.balance)) {
     throw new Error('Payment amount exceeds the remaining balance.')
   }
-  if (input.method === 'Sponsored' && !input.sponsorId) {
-    throw new Error('A sponsor must be selected for sponsored payments.')
-  }
 
   const { data, error } = await supabase
     .from('payments')
@@ -168,12 +208,40 @@ export async function recordPayment(
       patient_id: invoice.patient_id,
       amount: input.amount,
       method: input.method,
-      sponsor_id: input.method === 'Sponsored' ? input.sponsorId : null,
       paid_at: new Date(input.date).toISOString(),
+      bank_name: input.method === 'Bank' ? input.bankName?.trim() || null : null,
+      reference_number:
+        input.method === 'Bank' || input.method === 'GCash'
+          ? input.referenceNumber?.trim() || null
+          : null,
+      proof_photo_path: input.proofPhotoPath ?? null,
     })
     .select(SELECT)
     .single()
 
   if (error) throw error
-  return mapPaymentRow(data as unknown as PaymentQueryRow)
+  return (
+    await mapPaymentRows(supabase, [data as unknown as PaymentQueryRow])
+  )[0]
+}
+
+function sanitizeExtension(filename: string) {
+  const ext = filename.split('.').pop() ?? ''
+  const cleaned = ext.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
+  return cleaned.slice(0, 8) || 'jpg'
+}
+
+export async function uploadPaymentProof(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  file: File,
+): Promise<string> {
+  const path = `${clinicId}/${randomUUID()}.${sanitizeExtension(file.name)}`
+
+  const { error } = await supabase.storage
+    .from(PROOF_BUCKET)
+    .upload(path, file, { contentType: file.type })
+  if (error) throw error
+
+  return path
 }

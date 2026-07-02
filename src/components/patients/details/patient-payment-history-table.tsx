@@ -1,6 +1,5 @@
 import {
   Banknote,
-  CreditCard,
   Gift,
   HeartHandshake,
   Landmark,
@@ -40,10 +39,8 @@ const STATUS_VARIANT: Record<
 
 const METHOD_ICON: Record<PaymentMethod, LucideIcon> = {
   Cash: Banknote,
-  Card: CreditCard,
   Bank: Landmark,
   GCash: Wallet,
-  Maya: Wallet,
   Sponsored: HeartHandshake,
   'Pro Bono': Gift,
 }
@@ -96,7 +93,21 @@ export function PatientPaymentHistoryTable({
                   <span className="inline-flex items-center gap-1.5">
                     <MethodIcon className="size-3.5" />
                     {entry.method}
+                    {entry.bankName ? ` · ${entry.bankName}` : ''}
                   </span>
+                  {entry.referenceNumber && (
+                    <p className="text-xs">Ref: {entry.referenceNumber}</p>
+                  )}
+                  {entry.proofPhotoUrl && (
+                    <a
+                      href={entry.proofPhotoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-primary hover:underline"
+                    >
+                      View proof
+                    </a>
+                  )}
                 </TableCell>
                 <TableCell>
                   <StatusBadge

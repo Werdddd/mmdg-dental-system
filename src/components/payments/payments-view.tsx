@@ -14,24 +14,18 @@ import {
   type PaymentsSortOption,
 } from '@/components/payments/payments-toolbar'
 import { type PaymentRow } from '@/components/payments/data'
-import type { PatientRow } from '@/components/patients/data'
 import type { InvoiceRow } from '@/components/invoices/data'
-import type { SponsorRow } from '@/lib/data/sponsors'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
 interface PaymentsViewProps {
   initialPayments: PaymentRow[]
-  patients: PatientRow[]
   invoicesWithBalance: InvoiceRow[]
-  sponsors: SponsorRow[]
 }
 
 export function PaymentsView({
   initialPayments,
-  patients,
   invoicesWithBalance,
-  sponsors,
 }: PaymentsViewProps) {
   const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
   const [payments, setPayments] = useState<PaymentRow[]>(initialPayments)
@@ -139,8 +133,6 @@ export function PaymentsView({
         open={addOpen}
         onOpenChange={setAddOpen}
         invoices={invoicesWithBalance}
-        patients={patients}
-        sponsors={sponsors}
         onAdd={handleAddPayment}
       />
     </>

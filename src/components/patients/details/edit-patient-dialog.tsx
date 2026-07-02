@@ -16,23 +16,19 @@ import type { PatientRow } from '@/components/patients/data'
 import {
   PatientFormFields,
   formValuesToInput,
-  formValuesToSponsorship,
   patientToFormValues,
   type PatientFormValues,
 } from '@/components/patients/patient-form-fields'
-import type { SponsorRow } from '@/lib/data/sponsors'
 import { updatePatientAction } from '@/app/(app)/patients/actions'
 
 interface EditPatientFormProps {
   patient: PatientRow
-  sponsors: SponsorRow[]
   onCancel: () => void
   onSaved: () => void
 }
 
 function EditPatientForm({
   patient,
-  sponsors,
   onCancel,
   onSaved,
 }: EditPatientFormProps) {
@@ -56,11 +52,7 @@ function EditPatientForm({
     setIsSubmitting(true)
     setError(null)
     try {
-      await updatePatientAction(
-        patient.id,
-        formValuesToInput(values),
-        formValuesToSponsorship(values),
-      )
+      await updatePatientAction(patient.id, formValuesToInput(values))
       onSaved()
       router.refresh()
     } catch {
@@ -75,7 +67,6 @@ function EditPatientForm({
       <PatientFormFields
         values={values}
         onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
-        sponsors={sponsors}
       />
 
       {error && (
@@ -98,14 +89,12 @@ function EditPatientForm({
 
 interface EditPatientDialogProps {
   patient: PatientRow
-  sponsors: SponsorRow[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
 export function EditPatientDialog({
   patient,
-  sponsors,
   open,
   onOpenChange,
 }: EditPatientDialogProps) {
@@ -123,7 +112,6 @@ export function EditPatientDialog({
           <EditPatientForm
             key={patient.id}
             patient={patient}
-            sponsors={sponsors}
             onCancel={() => onOpenChange(false)}
             onSaved={() => onOpenChange(false)}
           />

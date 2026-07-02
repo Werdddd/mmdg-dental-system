@@ -21,28 +21,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { InvoiceRow } from '@/components/invoices/data'
-import type { PatientRow } from '@/components/patients/data'
 import type { PaymentMethod, PaymentRow } from '@/components/payments/data'
-import type { SponsorRow } from '@/lib/data/sponsors'
 import { formatCurrency } from '@/lib/utils'
 import { recordPaymentAction } from '@/app/(app)/payments/actions'
 
-const METHODS: PaymentMethod[] = [
-  'Cash',
-  'Card',
-  'Bank',
-  'GCash',
-  'Maya',
-  'Sponsored',
-  'Pro Bono',
-]
+const METHODS: PaymentMethod[] = ['Cash', 'Bank', 'GCash', 'Sponsored', 'Pro Bono']
 
 interface AddPaymentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   invoices: InvoiceRow[]
-  patients: PatientRow[]
-  sponsors: SponsorRow[]
   onAdd: (payment: PaymentRow) => void
 }
 
@@ -50,16 +38,16 @@ export function AddPaymentDialog({
   open,
   onOpenChange,
   invoices,
-  patients,
-  sponsors,
   onAdd,
 }: AddPaymentDialogProps) {
   const router = useRouter()
   const [invoiceId, setInvoiceId] = useState('')
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState<PaymentMethod>('Cash')
-  const [sponsorId, setSponsorId] = useState('')
   const [date, setDate] = useState('')
+  const [bankName, setBankName] = useState('')
+  const [referenceNumber, setReferenceNumber] = useState('')
+  const [proofPhoto, setProofPhoto] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -69,8 +57,10 @@ export function AddPaymentDialog({
     setInvoiceId('')
     setAmount('')
     setMethod('Cash')
-    setSponsorId('')
     setDate('')
+    setBankName('')
+    setReferenceNumber('')
+    setProofPhoto(null)
     setError(null)
   }
 
@@ -78,11 +68,13 @@ export function AddPaymentDialog({
     setInvoiceId(rawId)
     const invoice = invoices.find((inv) => inv.rawId === rawId)
     setAmount(invoice ? String(invoice.balance) : '')
+  }
 
-    const patient = patients.find((p) => p.id === invoice?.patientId)
-    if (patient?.sponsorship) {
-      setSponsorId(patient.sponsorship.sponsorId)
-    }
+  function handleMethodChange(value: PaymentMethod) {
+    setMethod(value)
+    setBankName('')
+    setReferenceNumber('')
+    setProofPhoto(null)
   }
 
   const amountValue = Number(amount)
@@ -93,7 +85,6 @@ export function AddPaymentDialog({
     selectedInvoice != null &&
     amountValue <= selectedInvoice.balance &&
     date.length > 0 &&
-    (method !== 'Sponsored' || sponsorId.length > 0) &&
     !isSubmitting
 
   async function handleSubmit() {
@@ -102,13 +93,16 @@ export function AddPaymentDialog({
     setIsSubmitting(true)
     setError(null)
     try {
-      const payment = await recordPaymentAction({
-        invoiceId,
-        amount: amountValue,
-        method,
-        sponsorId: method === 'Sponsored' ? sponsorId : null,
-        date,
-      })
+      const formData = new FormData()
+      formData.set('invoiceId', invoiceId)
+      formData.set('amount', String(amountValue))
+      formData.set('method', method)
+      formData.set('date', date)
+      formData.set('bankName', bankName)
+      formData.set('referenceNumber', referenceNumber)
+      if (proofPhoto) formData.set('proofPhoto', proofPhoto)
+
+      const payment = await recordPaymentAction(formData)
       onAdd(payment)
       resetForm()
       onOpenChange(false)
@@ -128,7 +122,7 @@ export function AddPaymentDialog({
         if (!next) resetForm()
       }}
     >
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New Payment</DialogTitle>
           <DialogDescription>
@@ -207,7 +201,9 @@ export function AddPaymentDialog({
             </label>
             <Select
               value={method}
-              onValueChange={(value) => value && setMethod(value as PaymentMethod)}
+              onValueChange={(value) =>
+                value && handleMethodChange(value as PaymentMethod)
+              }
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -222,37 +218,51 @@ export function AddPaymentDialog({
             </Select>
           </div>
 
-          {method === 'Sponsored' && (
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Sponsor
-              </label>
-              {sponsors.length === 0 ? (
-                <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-                  No sponsors yet — add one from the Sponsors page first.
-                </p>
-              ) : (
-                <Select
-                  value={sponsorId}
-                  onValueChange={(value) => value && setSponsorId(value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {(id: string) =>
-                        sponsors.find((s) => s.id === id)?.name ??
-                        'Select a sponsor'
-                      }
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sponsors.map((sponsor) => (
-                      <SelectItem key={sponsor.id} value={sponsor.id}>
-                        {sponsor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {(method === 'Bank' || method === 'GCash') && (
+            <div className="space-y-4 rounded-lg border border-dashed p-3">
+              {method === 'Bank' && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">
+                    Bank Name{' '}
+                    <span className="font-normal text-muted-foreground">
+                      (optional)
+                    </span>
+                  </label>
+                  <Input
+                    value={bankName}
+                    onChange={(event) => setBankName(event.target.value)}
+                    placeholder="e.g. BDO, BPI"
+                  />
+                </div>
               )}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  Reference Number{' '}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </label>
+                <Input
+                  value={referenceNumber}
+                  onChange={(event) => setReferenceNumber(event.target.value)}
+                  placeholder="e.g. REF123456789"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  Proof of Payment{' '}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) =>
+                    setProofPhoto(event.target.files?.[0] ?? null)
+                  }
+                />
+              </div>
             </div>
           )}
 
