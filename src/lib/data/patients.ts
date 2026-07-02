@@ -128,6 +128,19 @@ export async function getPatients(
   return ((data ?? []) as unknown as PatientQueryRow[]).map(mapPatientRow)
 }
 
+export async function getPatientCount(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('patients')
+    .select('id', { count: 'exact', head: true })
+    .eq('clinic_id', clinicId)
+
+  if (error) throw error
+  return count ?? 0
+}
+
 export interface PatientProfileInput {
   email?: string
   nationality?: string

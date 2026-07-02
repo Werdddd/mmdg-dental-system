@@ -14,12 +14,17 @@ export interface StaffUser {
 
 export async function getStaffUsers(
   supabase: SupabaseServerClient,
+  clinicId?: string,
 ): Promise<StaffUser[]> {
-  const { data: profiles, error } = await supabase
+  let query = supabase
     .from('profiles')
     .select('id, full_name, role, clinic_id, specialty, created_at')
-    .in('role', ['admin', 'dentist'])
+    .in('role', ['admin', 'dentist', 'receptionist', 'dental_assistant'])
     .order('created_at', { ascending: true })
+
+  if (clinicId) query = query.eq('clinic_id', clinicId)
+
+  const { data: profiles, error } = await query
 
   if (error) throw error
   if (!profiles?.length) return []

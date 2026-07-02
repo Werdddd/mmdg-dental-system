@@ -16,6 +16,8 @@ const ROLE_LABELS: Record<UserRole, string> = {
   superadmin: 'Super Admin',
   admin: 'Admin',
   dentist: 'Dentist',
+  receptionist: 'Receptionist',
+  dental_assistant: 'Dental Assistant',
 }
 
 export interface CurrentUserProfile {

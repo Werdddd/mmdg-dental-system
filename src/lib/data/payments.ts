@@ -111,6 +111,23 @@ export async function getPaymentsForPatient(
   return ((data ?? []) as unknown as PaymentQueryRow[]).map(mapPaymentRow)
 }
 
+export async function getRevenueByClinic(
+  supabase: SupabaseServerClient,
+): Promise<Record<string, number>> {
+  const { data, error } = await supabase
+    .from('payments')
+    .select('clinic_id, amount')
+    .eq('status', 'Paid')
+
+  if (error) throw error
+
+  const totals: Record<string, number> = {}
+  for (const row of data ?? []) {
+    totals[row.clinic_id] = (totals[row.clinic_id] ?? 0) + Number(row.amount)
+  }
+  return totals
+}
+
 export interface NewPaymentInput {
   invoiceId: string
   amount: number

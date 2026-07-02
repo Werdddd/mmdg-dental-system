@@ -24,6 +24,8 @@ const ROLE_LABEL: Record<UserRole, string> = {
   superadmin: 'Super Admin',
   admin: 'Admin',
   dentist: 'Dentist',
+  receptionist: 'Receptionist',
+  dental_assistant: 'Dental Assistant',
 }
 
 const STATUS_DOT: Record<AppointmentStatus, string> = {

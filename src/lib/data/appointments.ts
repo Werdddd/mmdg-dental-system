@@ -73,6 +73,19 @@ export async function getAppointments(
   )
 }
 
+export async function getAppointmentCount(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('appointments')
+    .select('id', { count: 'exact', head: true })
+    .eq('clinic_id', clinicId)
+
+  if (error) throw error
+  return count ?? 0
+}
+
 export async function getTodayAppointments(
   supabase: SupabaseServerClient,
   clinicId: string,

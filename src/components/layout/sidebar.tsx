@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
+  Building2,
   CalendarDays,
   HeartHandshake,
   LayoutDashboard,
@@ -17,6 +18,7 @@ import {
 
 import { cn } from '@/lib/utils'
 import { signOut } from '@/app/login/actions'
+import { useClinicContext } from '@/components/layout/clinic-context'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
@@ -28,6 +30,12 @@ const NAV_ITEMS = [
   { label: 'Settings', icon: Settings, href: '/settings' },
 ]
 
+const SUPERADMIN_NAV_ITEM = {
+  label: 'Clinics',
+  icon: Building2,
+  href: '/clinics',
+}
+
 interface SidebarProps {
   open: boolean
   onClose: () => void
@@ -35,6 +43,10 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const { isSuperAdmin } = useClinicContext()
+  const navItems = isSuperAdmin
+    ? [NAV_ITEMS[0], SUPERADMIN_NAV_ITEM, ...NAV_ITEMS.slice(1)]
+    : NAV_ITEMS
 
   return (
     <>
@@ -75,7 +87,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {NAV_ITEMS.map(({ label, icon: Icon, href }) => {
+          {navItems.map(({ label, icon: Icon, href }) => {
             const active = href != null && pathname.startsWith(href)
             const itemClassName = cn(
               'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',

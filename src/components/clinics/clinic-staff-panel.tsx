@@ -3,10 +3,8 @@
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { MoreHorizontal, Search, UserPlus } from 'lucide-react'
-import type { VariantProps } from 'class-variance-authority'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { type badgeVariants } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Dialog,
@@ -41,8 +39,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Pagination } from '@/components/shared/pagination'
-import { StatusBadge } from '@/components/shared/status-badge'
-import type { ClinicRecord } from '@/lib/data/clinics'
 import type { StaffUser } from '@/lib/data/staff'
 import type { UserRole } from '@/lib/auth/types'
 import { formatDisplayDate } from '@/lib/utils'
@@ -50,25 +46,22 @@ import {
   addStaffAction,
   removeStaffAction,
   updateStaffProfileAction,
-} from '@/app/(app)/settings/actions'
+} from '@/app/(app)/clinics/actions'
 
-const ROLE_LABELS: Record<UserRole, string> = {
+export const ROLE_LABELS: Record<UserRole, string> = {
   superadmin: 'SuperAdmin',
   admin: 'Admin',
   dentist: 'Dentist',
+  receptionist: 'Receptionist',
+  dental_assistant: 'Dental Assistant',
 }
 
-const INVITE_ROLES: Extract<UserRole, 'admin' | 'dentist'>[] = ['admin', 'dentist']
+const INVITE_ROLES: Extract<
+  UserRole,
+  'admin' | 'dentist' | 'receptionist' | 'dental_assistant'
+>[] = ['admin', 'dentist', 'receptionist', 'dental_assistant']
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
-
-const STATUS_VARIANT: Record<
-  string,
-  VariantProps<typeof badgeVariants>['variant']
-> = {
-  Active: 'success',
-  Invited: 'warning',
-}
 
 function initialsOf(fullName: string) {
   return fullName
@@ -80,17 +73,17 @@ function initialsOf(fullName: string) {
     .toUpperCase()
 }
 
-interface UserAccessPanelProps {
-  clinics: ClinicRecord[]
+interface ClinicStaffPanelProps {
+  clinicId: string
   staff: StaffUser[]
   currentUserId: string
 }
 
-export function UserAccessPanel({
-  clinics,
+export function ClinicStaffPanel({
+  clinicId,
   staff,
   currentUserId,
-}: UserAccessPanelProps) {
+}: ClinicStaffPanelProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [updatingId, setUpdatingId] = useState<string | null>(null)
@@ -104,10 +97,7 @@ export function UserAccessPanel({
   const [inviteFirstName, setInviteFirstName] = useState('')
   const [inviteLastName, setInviteLastName] = useState('')
   const [inviteRole, setInviteRole] =
-    useState<Extract<UserRole, 'admin' | 'dentist'>>('dentist')
-  const [inviteClinicId, setInviteClinicId] = useState<string>(
-    clinics[0]?.id ?? '',
-  )
+    useState<(typeof INVITE_ROLES)[number]>('dentist')
   const [inviteError, setInviteError] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
@@ -123,19 +113,9 @@ export function UserAccessPanel({
   const size = Number(pageSize)
   const totalPages = Math.max(1, Math.ceil(filtered.length / size))
   const currentPage = Math.min(page, totalPages)
-  const visible = filtered.slice(
-    (currentPage - 1) * size,
-    currentPage * size,
-  )
-
-  function clinicName(clinicId: string | null) {
-    if (!clinicId) return 'All clinics'
-    return clinics.find((c) => c.id === clinicId)?.name ?? '—'
-  }
+  const visible = filtered.slice((currentPage - 1) * size, currentPage * size)
 
   function handleRoleChange(user: StaffUser, role: UserRole) {
-    const clinicId =
-      role === 'superadmin' ? null : (user.clinicId ?? clinics[0]?.id ?? null)
     setUpdatingId(user.id)
     startTransition(async () => {
       const result = await updateStaffProfileAction(user.id, role, clinicId)
@@ -145,20 +125,10 @@ export function UserAccessPanel({
     })
   }
 
-  function handleClinicChange(user: StaffUser, clinicId: string) {
-    setUpdatingId(user.id)
-    startTransition(async () => {
-      const result = await updateStaffProfileAction(user.id, user.role, clinicId)
-      setUpdatingId(null)
-      if (result.error) alert(result.error)
-      else router.refresh()
-    })
-  }
-
   function handleRemove(id: string) {
     setUpdatingId(id)
     startTransition(async () => {
-      const result = await removeStaffAction(id)
+      const result = await removeStaffAction(id, clinicId)
       setUpdatingId(null)
       if (result.error) alert(result.error)
       else router.refresh()
@@ -170,7 +140,6 @@ export function UserAccessPanel({
     setInviteFirstName('')
     setInviteLastName('')
     setInviteRole('dentist')
-    setInviteClinicId(clinics[0]?.id ?? '')
     setInviteError(null)
   }
 
@@ -178,8 +147,7 @@ export function UserAccessPanel({
     if (
       !inviteEmail.trim() ||
       !inviteFirstName.trim() ||
-      !inviteLastName.trim() ||
-      !inviteClinicId
+      !inviteLastName.trim()
     )
       return
     setInviteError(null)
@@ -189,7 +157,7 @@ export function UserAccessPanel({
         inviteFirstName.trim(),
         inviteLastName.trim(),
         inviteRole,
-        inviteClinicId,
+        clinicId,
       )
       if (result.error) {
         setInviteError(result.error)
@@ -204,17 +172,16 @@ export function UserAccessPanel({
   const canInvite =
     inviteEmail.trim().length > 0 &&
     inviteFirstName.trim().length > 0 &&
-    inviteLastName.trim().length > 0 &&
-    inviteClinicId.length > 0
+    inviteLastName.trim().length > 0
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold">User Access</h2>
+          <h2 className="text-base font-semibold">Staff</h2>
           <p className="text-sm text-muted-foreground">
-            Staff emails, roles, and clinic assignments. Invited users receive
-            an email to set up their account.
+            Dentists, receptionists, and dental assistants assigned to this
+            clinic.
           </p>
         </div>
 
@@ -244,7 +211,7 @@ export function UserAccessPanel({
               className={buttonVariants({ className: 'gap-1.5 shrink-0' })}
             >
               <UserPlus className="size-4" />
-              Add User
+              Add Staff
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -324,33 +291,6 @@ export function UserAccessPanel({
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium">
-                    Clinic
-                  </label>
-                  <Select
-                    value={inviteClinicId}
-                    onValueChange={(v) => v && setInviteClinicId(v)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select clinic">
-                        {clinics.find((c) => c.id === inviteClinicId)?.name ?? 'Select clinic'}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clinics.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {clinics.length === 0 && (
-                    <p className="mt-1.5 text-xs text-muted-foreground">
-                      No clinics yet — add one first.
-                    </p>
-                  )}
-                </div>
                 {inviteError && (
                   <p className="text-sm text-destructive">{inviteError}</p>
                 )}
@@ -360,11 +300,8 @@ export function UserAccessPanel({
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleInvite}
-                  disabled={!canInvite || isPending || clinics.length === 0}
-                >
-                  {isPending ? 'Adding…' : 'Add User'}
+                <Button onClick={handleInvite} disabled={!canInvite || isPending}>
+                  {isPending ? 'Adding…' : 'Add Staff'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -378,7 +315,6 @@ export function UserAccessPanel({
             <TableRow className="hover:bg-transparent">
               <TableHead>Staff Member</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Clinic</TableHead>
               <TableHead>Date Added</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
@@ -387,9 +323,9 @@ export function UserAccessPanel({
           </TableHeader>
           <TableBody>
             {visible.length === 0 && (
-              <TableEmpty colSpan={5}>
+              <TableEmpty colSpan={4}>
                 {staff.length === 0
-                  ? 'No staff members yet. Invite someone to get started.'
+                  ? 'No staff assigned to this clinic yet.'
                   : 'No staff match your search.'}
               </TableEmpty>
             )}
@@ -428,36 +364,13 @@ export function UserAccessPanel({
                         v && handleRoleChange(user, v as UserRole)
                       }
                     >
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger className="w-40">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {INVITE_ROLES.map((r) => (
                           <SelectItem key={r} value={r}>
                             {ROLE_LABELS[r]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-
-                  <TableCell>
-                    <Select
-                      value={user.clinicId ?? ''}
-                      disabled={isUpdating || isSelf || clinics.length === 0}
-                      onValueChange={(v) =>
-                        v && handleClinicChange(user, v)
-                      }
-                    >
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Select clinic">
-                          {clinicName(user.clinicId)}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clinics.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -471,7 +384,7 @@ export function UserAccessPanel({
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger
-                        aria-label="User actions"
+                        aria-label="Staff actions"
                         disabled={isSelf || isUpdating}
                         className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
                       >

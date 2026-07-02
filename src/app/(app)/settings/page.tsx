@@ -1,7 +1,5 @@
 import { getCurrentProfile } from '@/lib/auth/profile'
 import { createClient } from '@/lib/supabase/server'
-import { getClinics } from '@/lib/data/clinics'
-import { getStaffUsers } from '@/lib/data/staff'
 import { SettingsView } from '@/components/settings/settings-view'
 import type { CurrentUserProfile } from '@/components/settings/profile-panel'
 
@@ -41,23 +39,7 @@ export default async function SettingsPage() {
 
   const isSuperAdmin = profile?.role === 'superadmin'
 
-  let clinics: Awaited<ReturnType<typeof getClinics>> = []
-  let staff: Awaited<ReturnType<typeof getStaffUsers>> = []
-
-  if (isSuperAdmin) {
-    ;[clinics, staff] = await Promise.all([
-      getClinics(supabase),
-      getStaffUsers(supabase),
-    ])
-  }
-
   return (
-    <SettingsView
-      currentUserId={profile?.id ?? ''}
-      currentProfile={currentProfile}
-      isSuperAdmin={isSuperAdmin}
-      clinics={clinics}
-      staff={staff}
-    />
+    <SettingsView currentProfile={currentProfile} isSuperAdmin={isSuperAdmin} />
   )
 }

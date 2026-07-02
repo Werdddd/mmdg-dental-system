@@ -16,15 +16,39 @@ async function assertSuperAdmin() {
 
 /* ---------- Clinics ---------- */
 
-export async function addClinicAction(name: string): Promise<ActionResult> {
+export async function addClinicAction(
+  name: string,
+  address: string,
+): Promise<ActionResult> {
   try {
     await assertSuperAdmin()
     const supabase = await createClient()
     const { error } = await supabase
       .from('clinics')
-      .insert({ name: name.trim() })
+      .insert({ name: name.trim(), address: address.trim() || null })
     if (error) return { error: error.message }
-    revalidatePath('/settings')
+    revalidatePath('/clinics')
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+  }
+}
+
+export async function updateClinicAction(
+  id: string,
+  name: string,
+  address: string,
+): Promise<ActionResult> {
+  try {
+    await assertSuperAdmin()
+    const supabase = await createClient()
+    const { error } = await supabase
+      .from('clinics')
+      .update({ name: name.trim(), address: address.trim() || null })
+      .eq('id', id)
+    if (error) return { error: error.message }
+    revalidatePath('/clinics')
+    revalidatePath(`/clinics/${id}`)
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unexpected error' }
@@ -37,7 +61,7 @@ export async function deleteClinicAction(id: string): Promise<ActionResult> {
     const supabase = await createClient()
     const { error } = await supabase.from('clinics').delete().eq('id', id)
     if (error) return { error: error.message }
-    revalidatePath('/settings')
+    revalidatePath('/clinics')
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unexpected error' }
@@ -58,7 +82,10 @@ export async function addStaffAction(
   email: string,
   firstName: string,
   lastName: string,
-  role: Extract<UserRole, 'admin' | 'dentist'>,
+  role: Extract<
+    UserRole,
+    'admin' | 'dentist' | 'receptionist' | 'dental_assistant'
+  >,
   clinicId: string,
 ): Promise<ActionResult> {
   try {
@@ -72,7 +99,8 @@ export async function addStaffAction(
       user_metadata: { full_name: fullName, role, clinic_id: clinicId },
     })
     if (error) return { error: error.message }
-    revalidatePath('/settings')
+    revalidatePath('/clinics')
+    revalidatePath(`/clinics/${clinicId}`)
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unexpected error' }
@@ -92,20 +120,25 @@ export async function updateStaffProfileAction(
       .update({ role, clinic_id: clinicId })
       .eq('id', id)
     if (error) return { error: error.message }
-    revalidatePath('/settings')
+    revalidatePath('/clinics')
+    if (clinicId) revalidatePath(`/clinics/${clinicId}`)
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unexpected error' }
   }
 }
 
-export async function removeStaffAction(id: string): Promise<ActionResult> {
+export async function removeStaffAction(
+  id: string,
+  clinicId?: string,
+): Promise<ActionResult> {
   try {
     await assertSuperAdmin()
     const admin = createAdminClient()
     const { error } = await admin.auth.admin.deleteUser(id)
     if (error) return { error: error.message }
-    revalidatePath('/settings')
+    revalidatePath('/clinics')
+    if (clinicId) revalidatePath(`/clinics/${clinicId}`)
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Unexpected error' }
