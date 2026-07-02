@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { CalendarDays, CheckCircle, Clock, Users } from 'lucide-react'
 
 import { StatCard } from '@/components/dashboard/stat-card'
@@ -10,7 +11,6 @@ import { AppointmentStatisticsCard } from '@/components/dashboard/appointment-st
 import { RecentActivityCard } from '@/components/dashboard/recent-activity-card'
 import { QuickActionsCard } from '@/components/dashboard/quick-actions-card'
 import { AddAppointmentDialog } from '@/components/appointments/add-appointment-dialog'
-import { AddPatientDialog } from '@/components/patients/add-patient-dialog'
 import { AddInvoiceDialog } from '@/components/invoices/add-invoice-dialog'
 import { AddPaymentDialog } from '@/components/payments/add-payment-dialog'
 import { ClinicSelector } from '@/components/layout/clinic-selector'
@@ -49,9 +49,8 @@ function buildWeeklyStats(appointments: AppointmentRow[]) {
     const dateStr = day.toISOString().slice(0, 10)
     return {
       label,
-      count: appointments.filter(
-        (a) => isoDateOf(a.scheduledAt) === dateStr,
-      ).length,
+      count: appointments.filter((a) => isoDateOf(a.scheduledAt) === dateStr)
+        .length,
     }
   })
 
@@ -83,10 +82,10 @@ export function DashboardView({
   profileName,
 }: DashboardViewProps) {
   const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
+  const router = useRouter()
 
   // Dialog states
   const [apptOpen, setApptOpen] = useState(false)
-  const [patientOpen, setPatientOpen] = useState(false)
   const [invoiceOpen, setInvoiceOpen] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
 
@@ -108,13 +107,19 @@ export function DashboardView({
     [appointments],
   )
 
-  const weeklyStats = useMemo(() => buildWeeklyStats(appointments), [appointments])
+  const weeklyStats = useMemo(
+    () => buildWeeklyStats(appointments),
+    [appointments],
+  )
   const totalThisWeek = useMemo(
     () => weeklyStats.reduce((sum, d) => sum + d.count, 0),
     [weeklyStats],
   )
 
-  const recentAppointments = useMemo(() => appointments.slice(0, 9), [appointments])
+  const recentAppointments = useMemo(
+    () => appointments.slice(0, 9),
+    [appointments],
+  )
 
   const firstName = profileName.split(' ')[0] ?? 'Doctor'
 
@@ -186,7 +191,7 @@ export function DashboardView({
         <RecentActivityCard appointments={recentAppointments} />
         <QuickActionsCard
           onNewAppointment={() => setApptOpen(true)}
-          onAddPatient={() => setPatientOpen(true)}
+          onAddPatient={() => router.push('/patients/new')}
           onNewInvoice={() => setInvoiceOpen(true)}
           onNewPayment={() => setPaymentOpen(true)}
         />
@@ -199,11 +204,6 @@ export function DashboardView({
         patients={patients}
         dentists={dentists}
         onAdd={() => setApptOpen(false)}
-      />
-      <AddPatientDialog
-        open={patientOpen}
-        onOpenChange={setPatientOpen}
-        onAdd={() => setPatientOpen(false)}
       />
       <AddInvoiceDialog
         open={invoiceOpen}

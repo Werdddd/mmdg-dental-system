@@ -3,20 +3,30 @@ import {
   formatPatientCode,
   type PatientRow,
   type EmergencyContact,
-  type ChiefComplaint,
+  type DentalVisitInfo,
+  type RecordStatus,
+  type SystemMetadata,
 } from '@/components/patients/data'
 
 /* ---------- About / contact / emergency contact ---------- */
 
-export type { EmergencyContact, ChiefComplaint }
+export type { EmergencyContact, DentalVisitInfo, RecordStatus, SystemMetadata }
 
 export interface PatientAbout {
+  firstName: string
+  middleName: string
+  lastName: string
+  suffix: string
   dateOfBirth: string
   age: number
   gender: PatientRow['gender']
-  nationality: string
   civilStatus: string
+  nationality: string
+  occupation: string
+  homeAddress: string
   contactNumber: string
+  telephoneNumber: string
+  preferredContactMethod: string
   email: string
   emergencyContact: EmergencyContact
 }
@@ -24,7 +34,8 @@ export interface PatientAbout {
 export interface PatientProfile {
   patientCode: string
   about: PatientAbout
-  chiefComplaint: ChiefComplaint
+  dentalVisit: DentalVisitInfo
+  systemMetadata: SystemMetadata
 }
 
 function fallback(value: string) {
@@ -35,14 +46,22 @@ export function getPatientProfile(patient: PatientRow): PatientProfile {
   return {
     patientCode: formatPatientCode(patient.patientNumber),
     about: {
+      firstName: fallback(patient.firstName),
+      middleName: fallback(patient.middleName),
+      lastName: fallback(patient.lastName),
+      suffix: fallback(patient.suffix),
       dateOfBirth: patient.birthdayIso
         ? formatDisplayDate(patient.birthdayIso)
         : '—',
       age: patient.age,
       gender: patient.gender,
-      nationality: fallback(patient.nationality),
       civilStatus: fallback(patient.civilStatus),
+      nationality: fallback(patient.nationality),
+      occupation: fallback(patient.occupation),
+      homeAddress: fallback(patient.address),
       contactNumber: fallback(patient.phone),
+      telephoneNumber: fallback(patient.telephoneNumber),
+      preferredContactMethod: fallback(patient.preferredContactMethod),
       email: fallback(patient.email),
       emergencyContact: {
         name: fallback(patient.emergencyContact.name),
@@ -50,11 +69,22 @@ export function getPatientProfile(patient: PatientRow): PatientProfile {
         phone: fallback(patient.emergencyContact.phone),
       },
     },
-    chiefComplaint: {
-      primaryComplaint: fallback(patient.chiefComplaint.primaryComplaint),
-      symptoms: fallback(patient.chiefComplaint.symptoms),
-      affectedArea: fallback(patient.chiefComplaint.affectedArea),
-      remarks: fallback(patient.chiefComplaint.remarks),
+    dentalVisit: {
+      chiefComplaint: fallback(patient.dentalVisit.chiefComplaint),
+      symptoms: fallback(patient.dentalVisit.symptoms),
+      affectedArea: fallback(patient.dentalVisit.affectedArea),
+      historyOfPresentIllness: fallback(
+        patient.dentalVisit.historyOfPresentIllness,
+      ),
+      initialClinicalFindings: fallback(
+        patient.dentalVisit.initialClinicalFindings,
+      ),
+      diagnosis: fallback(patient.dentalVisit.diagnosis),
+      treatmentRecommendations: fallback(
+        patient.dentalVisit.treatmentRecommendations,
+      ),
+      remarks: fallback(patient.dentalVisit.remarks),
     },
+    systemMetadata: patient.systemMetadata,
   }
 }

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
 import { getActiveClinicId } from '@/lib/data/clinic'
-import { getPatientById } from '@/lib/data/patients'
+import { getPatientById, getPatientIntakeExtras } from '@/lib/data/patients'
 import { getPatientNotes } from '@/lib/data/patient-notes'
 import { getToothRecords } from '@/lib/data/dental-chart'
 import { getPatientBranches } from '@/lib/data/patient-branches'
@@ -30,6 +30,7 @@ export default async function PatientDetailsPage({
     dentists,
     treatmentRecords,
     payments,
+    intakeExtras,
   ] = await Promise.all([
     getPatientById(supabase, clinicId, id),
     getPatientNotes(supabase, clinicId, id),
@@ -39,6 +40,7 @@ export default async function PatientDetailsPage({
     getDentists(supabase, clinicId),
     getTreatmentRecordsForPatient(supabase, clinicId, id),
     getPaymentsForPatient(supabase, clinicId, id),
+    getPatientIntakeExtras(supabase, id),
   ])
 
   if (!patient) {
@@ -55,6 +57,8 @@ export default async function PatientDetailsPage({
       dentists={dentists}
       treatmentRecords={treatmentRecords}
       payments={payments}
+      medicalHistory={intakeExtras.medicalHistory}
+      consentForm={intakeExtras.consentForm}
     />
   )
 }

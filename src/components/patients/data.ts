@@ -4,11 +4,36 @@ export interface EmergencyContact {
   phone: string
 }
 
-export interface ChiefComplaint {
-  primaryComplaint: string
+export interface DentalVisitInfo {
+  chiefComplaint: string
   symptoms: string
   affectedArea: string
+  historyOfPresentIllness: string
+  initialClinicalFindings: string
+  diagnosis: string
+  treatmentRecommendations: string
   remarks: string
+}
+
+export type RecordStatus = 'Active' | 'Inactive' | 'Archived'
+
+export type PreferredContactMethod =
+  | 'SMS'
+  | 'Phone Call'
+  | 'Email'
+  | 'Facebook Messenger'
+  | 'WhatsApp'
+  | 'Viber'
+  | 'Other'
+
+export interface SystemMetadata {
+  recordStatus: RecordStatus
+  createdByName: string
+  createdAt: string
+  updatedByName: string
+  updatedAt: string
+  lastAppointmentDate: string
+  nextAppointmentDate: string
 }
 
 export function formatPatientCode(patientNumber: number) {
@@ -20,9 +45,17 @@ export interface PatientRow {
   patientNumber: number
   name: string
   initials: string
+  photoUrl: string
+  firstName: string
+  middleName: string
+  lastName: string
+  suffix: string
   age: number
   gender: 'Male' | 'Female'
   phone: string
+  telephoneNumber: string
+  preferredContactMethod: PreferredContactMethod | ''
+  occupation: string
   lastAppointment: string
   lastAppointmentReason: string
   address: string
@@ -34,7 +67,8 @@ export interface PatientRow {
   nationality: string
   civilStatus: string
   emergencyContact: EmergencyContact
-  chiefComplaint: ChiefComplaint
+  dentalVisit: DentalVisitInfo
+  systemMetadata: SystemMetadata
 }
 
 function isThisMonth(dateStr: string, referenceDate: Date) {
@@ -69,4 +103,18 @@ export function computePatientsSummary(patients: PatientRow[]) {
       isWithinNextDays(p.birthday, 30, referenceDate),
     ).length,
   }
+}
+
+// Patient is a minor if under 18 as of today — drives the Guardian fields
+// on the Consent & Waiver Form.
+export function isMinor(birthdayIso: string): boolean {
+  if (!birthdayIso) return false
+  const dob = new Date(birthdayIso)
+  const now = new Date()
+  let age = now.getFullYear() - dob.getFullYear()
+  const hadBirthdayThisYear =
+    now.getMonth() > dob.getMonth() ||
+    (now.getMonth() === dob.getMonth() && now.getDate() >= dob.getDate())
+  if (!hadBirthdayThisYear) age -= 1
+  return age < 18
 }

@@ -11,7 +11,7 @@ import {
   Phone,
 } from 'lucide-react'
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -24,7 +24,6 @@ import {
 import { cn } from '@/lib/utils'
 import type { PatientRow } from '@/components/patients/data'
 import type { PatientProfile } from '@/components/patients/details/data'
-import { EditPatientDialog } from '@/components/patients/details/edit-patient-dialog'
 
 interface PatientHeaderCardProps {
   patient: PatientRow
@@ -36,16 +35,19 @@ export function PatientHeaderCard({
   profile,
 }: PatientHeaderCardProps) {
   const [documentsOpen, setDocumentsOpen] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
 
   return (
     <div className="rounded-xl border bg-card p-6 shadow-sm">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
           <Avatar className="size-20 shrink-0">
-            <AvatarFallback className="text-xl">
-              {patient.initials}
-            </AvatarFallback>
+            {patient.photoUrl ? (
+              <AvatarImage src={patient.photoUrl} alt={patient.name} />
+            ) : (
+              <AvatarFallback className="text-xl">
+                {patient.initials}
+              </AvatarFallback>
+            )}
           </Avatar>
 
           <div className="space-y-1.5">
@@ -87,14 +89,13 @@ export function PatientHeaderCard({
         </div>
 
         <div className="flex flex-wrap justify-center gap-2 lg:justify-end">
-          <Button
-            variant="outline"
-            className="gap-1.5"
-            onClick={() => setEditOpen(true)}
+          <Link
+            href={`/patients/${patient.id}/edit`}
+            className={cn(buttonVariants({ variant: 'outline' }), 'gap-1.5')}
           >
             <Pencil className="size-4" />
             Edit Patient
-          </Button>
+          </Link>
           <Button
             variant="outline"
             className="gap-1.5"
@@ -126,12 +127,6 @@ export function PatientHeaderCard({
           </div>
         </DialogContent>
       </Dialog>
-
-      <EditPatientDialog
-        patient={patient}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-      />
     </div>
   )
 }

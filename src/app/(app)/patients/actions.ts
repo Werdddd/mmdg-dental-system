@@ -24,20 +24,27 @@ import {
   addPatientBranch,
   removePatientBranch,
 } from '@/lib/data/patient-branches'
-import {
-  addToothPhoto,
-  deleteToothPhoto,
-} from '@/lib/data/dental-chart-photos'
+import { addToothPhoto, deleteToothPhoto } from '@/lib/data/dental-chart-photos'
 import {
   createTreatmentRecord,
   type NewTreatmentRecordInput,
 } from '@/lib/data/treatment-records'
 import type { ClinicBranch } from '@/lib/dental/branches'
 
-export async function addPatientAction(input: NewPatientInput) {
+export async function addPatientAction(
+  input: NewPatientInput,
+  photoFile?: File | null,
+) {
   const clinicId = await getActiveClinicId()
   const supabase = await createClient()
-  const patient = await createPatient(supabase, clinicId, input)
+  const profile = await getCurrentProfile()
+  const patient = await createPatient(
+    supabase,
+    clinicId,
+    profile?.id,
+    input,
+    photoFile,
+  )
   revalidatePath('/patients')
   return patient
 }
@@ -45,12 +52,24 @@ export async function addPatientAction(input: NewPatientInput) {
 export async function updatePatientAction(
   patientId: string,
   input: UpdatePatientInput,
+  photoFile?: File | null,
+  removePhoto?: boolean,
 ) {
   const clinicId = await getActiveClinicId()
   const supabase = await createClient()
-  const patient = await updatePatient(supabase, clinicId, patientId, input)
+  const profile = await getCurrentProfile()
+  const patient = await updatePatient(
+    supabase,
+    clinicId,
+    patientId,
+    profile?.id,
+    input,
+    photoFile,
+    removePhoto,
+  )
   revalidatePath('/patients')
   revalidatePath(`/patients/${patientId}`)
+  revalidatePath(`/patients/${patientId}/edit`)
   return patient
 }
 

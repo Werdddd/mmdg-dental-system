@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { CalendarDays, MapPin, MoreVertical } from 'lucide-react'
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,9 +61,13 @@ export function PatientCard({ patient, view }: PatientCardProps) {
         )}
       >
         <Avatar className={cn(isList ? 'size-12' : 'size-16')}>
-          <AvatarFallback className="text-base">
-            {patient.initials}
-          </AvatarFallback>
+          {patient.photoUrl ? (
+            <AvatarImage src={patient.photoUrl} alt={patient.name} />
+          ) : (
+            <AvatarFallback className="text-base">
+              {patient.initials}
+            </AvatarFallback>
+          )}
         </Avatar>
         <div className={cn(!isList && 'pr-4')}>
           <p className="font-semibold">{patient.name}</p>

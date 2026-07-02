@@ -12,10 +12,14 @@ export function PatientAboutCard({ about }: PatientAboutCardProps) {
     <InfoCard title="About" icon={UserRound}>
       <InfoRow label="Date of Birth" value={about.dateOfBirth} />
       <InfoRow label="Age" value={`${about.age} years old`} />
-      <InfoRow label="Gender" value={about.gender} />
-      <InfoRow label="Nationality" value={about.nationality} />
+      <InfoRow label="Sex" value={about.gender} />
       <InfoRow label="Civil Status" value={about.civilStatus} />
-      <InfoRow label="Contact Number" value={about.contactNumber} />
+      <InfoRow label="Nationality" value={about.nationality} />
+      <InfoRow label="Occupation" value={about.occupation} />
+      <InfoRow label="Home Address" value={about.homeAddress} />
+      <InfoRow label="Mobile Number" value={about.contactNumber} />
+      <InfoRow label="Telephone Number" value={about.telephoneNumber} />
+      <InfoRow label="Preferred Contact" value={about.preferredContactMethod} />
       <InfoRow label="Email" value={about.email} />
       <InfoRow
         label="Emergency Contact"

@@ -1,12 +1,12 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/shared/pagination'
 import { ClinicSelector } from '@/components/layout/clinic-selector'
 import { useClinicContext } from '@/components/layout/clinic-context'
-import { AddPatientDialog } from '@/components/patients/add-patient-dialog'
 import { PatientsSummaryCards } from '@/components/patients/patients-summary-cards'
 import {
   PatientsToolbar,
@@ -23,14 +23,14 @@ interface PatientsViewProps {
 }
 
 export function PatientsView({ initialPatients }: PatientsViewProps) {
+  const router = useRouter()
   const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
-  const [patients, setPatients] = useState<PatientRow[]>(initialPatients)
+  const [patients] = useState<PatientRow[]>(initialPatients)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<PatientsSortOption>('Recent')
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const [pageSize, setPageSize] = useState('8')
   const [page, setPage] = useState(1)
-  const [addOpen, setAddOpen] = useState(false)
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -79,11 +79,6 @@ export function PatientsView({ initialPatients }: PatientsViewProps) {
     setPage(1)
   }
 
-  function handleAddPatient(patient: PatientRow) {
-    setPatients((prev) => [patient, ...prev])
-    setPage(1)
-  }
-
   return (
     <>
       <div>
@@ -110,7 +105,7 @@ export function PatientsView({ initialPatients }: PatientsViewProps) {
         onSortChange={handleSortChange}
         view={view}
         onViewChange={setView}
-        onNewClick={() => setAddOpen(true)}
+        onNewClick={() => router.push('/patients/new')}
       />
 
       {filtered.length === 0 ? (
@@ -145,12 +140,6 @@ export function PatientsView({ initialPatients }: PatientsViewProps) {
           </div>
         </>
       )}
-
-      <AddPatientDialog
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        onAdd={handleAddPatient}
-      />
     </>
   )
 }

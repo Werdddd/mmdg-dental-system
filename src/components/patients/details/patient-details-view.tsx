@@ -13,11 +13,16 @@ import type { ClinicBranch } from '@/lib/dental/branches'
 import type { DentistOption } from '@/lib/data/dentists'
 import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
 import type { PaymentRow } from '@/components/payments/data'
+import type { PatientMedicalHistoryRow } from '@/lib/data/patient-medical-history'
+import type { PatientConsentFormRow } from '@/lib/data/patient-consent-forms'
 import { getPatientProfile } from '@/components/patients/details/data'
 import { PatientHeaderCard } from '@/components/patients/details/patient-header-card'
 import { PatientAboutCard } from '@/components/patients/details/patient-about-card'
-import { ChiefComplaintCard } from '@/components/patients/details/chief-complaint-card'
+import { DentalVisitCard } from '@/components/patients/details/dental-visit-card'
 import { PatientNotesCard } from '@/components/patients/details/patient-notes-card'
+import { MedicalHistoryCard } from '@/components/patients/details/medical-history-card'
+import { ConsentFormCard } from '@/components/patients/details/consent-form-card'
+import { SystemMetadataCard } from '@/components/patients/details/system-metadata-card'
 import { MedicalRecordsTabs } from '@/components/patients/details/medical-records-tabs'
 
 interface PatientDetailsViewProps {
@@ -29,6 +34,8 @@ interface PatientDetailsViewProps {
   dentists: DentistOption[]
   treatmentRecords: TreatmentRecordRow[]
   payments: PaymentRow[]
+  medicalHistory: PatientMedicalHistoryRow | null
+  consentForm: PatientConsentFormRow | null
 }
 
 export function PatientDetailsView({
@@ -40,6 +47,8 @@ export function PatientDetailsView({
   dentists,
   treatmentRecords,
   payments,
+  medicalHistory,
+  consentForm,
 }: PatientDetailsViewProps) {
   const profile = getPatientProfile(patient)
 
@@ -57,8 +66,17 @@ export function PatientDetailsView({
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <PatientAboutCard about={profile.about} />
-        <ChiefComplaintCard complaint={profile.chiefComplaint} />
+        <DentalVisitCard visit={profile.dentalVisit} />
         <PatientNotesCard patientId={patient.id} notes={notes} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <MedicalHistoryCard
+          medicalHistory={medicalHistory}
+          isFemale={patient.gender === 'Female'}
+        />
+        <ConsentFormCard consentForm={consentForm} patientName={patient.name} />
+        <SystemMetadataCard metadata={profile.systemMetadata} />
       </div>
 
       <MedicalRecordsTabs

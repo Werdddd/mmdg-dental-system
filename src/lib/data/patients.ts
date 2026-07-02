@@ -1,15 +1,53 @@
-import { formatPatientCode, type PatientRow } from '@/components/patients/data'
+import {
+  formatPatientCode,
+  isMinor,
+  type PatientRow,
+  type PreferredContactMethod,
+  type RecordStatus,
+} from '@/components/patients/data'
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, formatMonthDay, initialsOf } from '@/lib/utils'
+import {
+  getPatientMedicalHistory,
+  upsertPatientMedicalHistory,
+  type MedicalHistoryInput,
+} from '@/lib/data/patient-medical-history'
+import {
+  getPatientConsentForm,
+  upsertPatientConsentForm,
+  type ConsentFormInput,
+} from '@/lib/data/patient-consent-forms'
+import {
+  deletePatientPhoto,
+  signPatientPhotoUrl,
+  signPatientPhotoUrls,
+  uploadPatientPhoto,
+} from '@/lib/data/patient-photo'
+
+interface ProfileNameRow {
+  full_name: string | null
+}
+
+interface AppointmentRow {
+  scheduled_at: string
+  notes: string | null
+}
 
 interface PatientQueryRow {
   id: string
   patient_number: number
   full_name: string
+  first_name: string | null
+  middle_name: string | null
+  last_name: string | null
+  suffix: string | null
   gender: 'Male' | 'Female' | null
   birthday: string | null
   address: string | null
   phone: string | null
+  telephone_number: string | null
+  preferred_contact_method: PreferredContactMethod | null
+  occupation: string | null
   treatment_status: 'Active' | 'Completed'
   created_at: string
   email: string | null
@@ -22,14 +60,31 @@ interface PatientQueryRow {
   symptoms: string | null
   affected_area: string | null
   complaint_remarks: string | null
-  appointments: { scheduled_at: string; notes: string | null }[] | null
+  history_of_present_illness: string | null
+  initial_clinical_findings: string | null
+  diagnosis: string | null
+  treatment_recommendations: string | null
+  record_status: RecordStatus
+  created_by: string | null
+  updated_by: string | null
+  updated_at: string
+  photo_path: string | null
+  created_by_profile: ProfileNameRow | null
+  updated_by_profile: ProfileNameRow | null
+  appointments: AppointmentRow[] | null
 }
 
 const SELECT = `
-  id, patient_number, full_name, gender, birthday, address, phone, treatment_status, created_at,
+  id, patient_number, full_name, first_name, middle_name, last_name, suffix,
+  gender, birthday, address, phone, telephone_number, preferred_contact_method, occupation,
+  treatment_status, created_at,
   email, nationality, civil_status,
   emergency_contact_name, emergency_contact_relation, emergency_contact_phone,
   chief_complaint, symptoms, affected_area, complaint_remarks,
+  history_of_present_illness, initial_clinical_findings, diagnosis, treatment_recommendations,
+  record_status, created_by, updated_by, updated_at, photo_path,
+  created_by_profile:profiles!patients_created_by_fkey ( full_name ),
+  updated_by_profile:profiles!patients_updated_by_fkey ( full_name ),
   appointments ( scheduled_at, notes )
 `
 
@@ -44,20 +99,49 @@ function computeAge(birthday: string) {
   return age
 }
 
-function mapPatientRow(row: PatientQueryRow): PatientRow {
-  const latest = [...(row.appointments ?? [])].sort(
+function summarizeAppointments(appointments: AppointmentRow[]) {
+  const sorted = [...appointments].sort(
     (a, b) =>
       new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime(),
-  )[0]
+  )
+  const latest = sorted[0]
+
+  const now = Date.now()
+  const past = sorted.filter((a) => new Date(a.scheduled_at).getTime() <= now)
+  const future = sorted.filter((a) => new Date(a.scheduled_at).getTime() > now)
+  const nextUpcoming = future[future.length - 1]
+
+  return {
+    latest,
+    lastAppointmentDate: past[0]
+      ? formatDisplayDate(past[0].scheduled_at.slice(0, 10))
+      : '—',
+    nextAppointmentDate: nextUpcoming
+      ? formatDisplayDate(nextUpcoming.scheduled_at.slice(0, 10))
+      : '—',
+  }
+}
+
+function mapPatientRow(row: PatientQueryRow, photoUrl: string): PatientRow {
+  const { latest, lastAppointmentDate, nextAppointmentDate } =
+    summarizeAppointments(row.appointments ?? [])
 
   return {
     id: row.id,
     patientNumber: row.patient_number,
     name: row.full_name,
     initials: initialsOf(row.full_name),
+    photoUrl,
+    firstName: row.first_name ?? '',
+    middleName: row.middle_name ?? '',
+    lastName: row.last_name ?? '',
+    suffix: row.suffix ?? '',
     age: row.birthday ? computeAge(row.birthday) : 0,
     gender: row.gender ?? 'Female',
     phone: row.phone ?? '',
+    telephoneNumber: row.telephone_number ?? '',
+    preferredContactMethod: row.preferred_contact_method ?? '',
+    occupation: row.occupation ?? '',
     lastAppointment: latest
       ? formatDisplayDate(latest.scheduled_at.slice(0, 10))
       : '—',
@@ -75,11 +159,24 @@ function mapPatientRow(row: PatientQueryRow): PatientRow {
       relation: row.emergency_contact_relation ?? '',
       phone: row.emergency_contact_phone ?? '',
     },
-    chiefComplaint: {
-      primaryComplaint: row.chief_complaint ?? '',
+    dentalVisit: {
+      chiefComplaint: row.chief_complaint ?? '',
       symptoms: row.symptoms ?? '',
       affectedArea: row.affected_area ?? '',
+      historyOfPresentIllness: row.history_of_present_illness ?? '',
+      initialClinicalFindings: row.initial_clinical_findings ?? '',
+      diagnosis: row.diagnosis ?? '',
+      treatmentRecommendations: row.treatment_recommendations ?? '',
       remarks: row.complaint_remarks ?? '',
+    },
+    systemMetadata: {
+      recordStatus: row.record_status,
+      createdByName: row.created_by_profile?.full_name ?? '—',
+      createdAt: formatDisplayDate(row.created_at.slice(0, 10)),
+      updatedByName: row.updated_by_profile?.full_name ?? '—',
+      updatedAt: formatDisplayDate(row.updated_at.slice(0, 10)),
+      lastAppointmentDate,
+      nextAppointmentDate,
     },
   }
 }
@@ -95,7 +192,17 @@ export async function getPatients(
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return ((data ?? []) as unknown as PatientQueryRow[]).map(mapPatientRow)
+  const rows = (data ?? []) as unknown as PatientQueryRow[]
+  const photoUrls = await signPatientPhotoUrls(
+    supabase,
+    rows.map((row) => row.photo_path),
+  )
+  return rows.map((row) =>
+    mapPatientRow(
+      row,
+      row.photo_path ? (photoUrls.get(row.photo_path) ?? '') : '',
+    ),
+  )
 }
 
 export async function getPatientCount(
@@ -112,6 +219,11 @@ export async function getPatientCount(
 }
 
 export interface PatientProfileInput {
+  middleName?: string
+  suffix?: string
+  telephoneNumber?: string
+  preferredContactMethod?: PreferredContactMethod
+  occupation?: string
   email?: string
   nationality?: string
   civilStatus?: string
@@ -122,10 +234,18 @@ export interface PatientProfileInput {
   symptoms?: string
   affectedArea?: string
   complaintRemarks?: string
+  historyOfPresentIllness?: string
+  initialClinicalFindings?: string
+  diagnosis?: string
+  treatmentRecommendations?: string
+  recordStatus?: RecordStatus
+  medicalHistory?: MedicalHistoryInput
+  consentForm?: ConsentFormInput
 }
 
 export interface NewPatientInput extends PatientProfileInput {
-  fullName: string
+  firstName: string
+  lastName: string
   phone: string
   gender: 'Male' | 'Female'
   birthday: string
@@ -133,7 +253,8 @@ export interface NewPatientInput extends PatientProfileInput {
 }
 
 export interface UpdatePatientInput extends PatientProfileInput {
-  fullName: string
+  firstName: string
+  lastName: string
   phone: string
   gender: 'Male' | 'Female'
   birthday: string
@@ -142,6 +263,11 @@ export interface UpdatePatientInput extends PatientProfileInput {
 
 function profileColumns(input: PatientProfileInput) {
   return {
+    middle_name: input.middleName || null,
+    suffix: input.suffix || null,
+    telephone_number: input.telephoneNumber || null,
+    preferred_contact_method: input.preferredContactMethod || null,
+    occupation: input.occupation || null,
     email: input.email || null,
     nationality: input.nationality || null,
     civil_status: input.civilStatus || null,
@@ -152,6 +278,11 @@ function profileColumns(input: PatientProfileInput) {
     symptoms: input.symptoms || null,
     affected_area: input.affectedArea || null,
     complaint_remarks: input.complaintRemarks || null,
+    history_of_present_illness: input.historyOfPresentIllness || null,
+    initial_clinical_findings: input.initialClinicalFindings || null,
+    diagnosis: input.diagnosis || null,
+    treatment_recommendations: input.treatmentRecommendations || null,
+    record_status: input.recordStatus || 'Active',
   }
 }
 
@@ -171,46 +302,137 @@ export async function getPatientById(
     if (error.code === 'PGRST116') return null
     throw error
   }
-  return mapPatientRow(data as unknown as PatientQueryRow)
+  const row = data as unknown as PatientQueryRow
+  const photoUrl = row.photo_path
+    ? await signPatientPhotoUrl(supabase, row.photo_path)
+    : ''
+  return mapPatientRow(row, photoUrl)
+}
+
+// Uploads/removes the patient's profile photo (both optional) and returns
+// the resulting storage path, or null if there is none. `currentPath` is
+// the path already on the row before this call, if any.
+async function resolvePatientPhotoPath(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  patientId: string,
+  currentPath: string | null,
+  photoFile: File | null | undefined,
+  removePhoto: boolean | undefined,
+): Promise<string | null> {
+  if (photoFile) {
+    if (currentPath) {
+      await deletePatientPhoto(supabase, currentPath).catch(() => {})
+    }
+    const newPath = await uploadPatientPhoto(
+      supabase,
+      clinicId,
+      patientId,
+      photoFile,
+    )
+    const { error } = await supabase
+      .from('patients')
+      .update({ photo_path: newPath })
+      .eq('id', patientId)
+    if (error) throw error
+    return newPath
+  }
+
+  if (removePhoto && currentPath) {
+    await deletePatientPhoto(supabase, currentPath).catch(() => {})
+    const { error } = await supabase
+      .from('patients')
+      .update({ photo_path: null })
+      .eq('id', patientId)
+    if (error) throw error
+    return null
+  }
+
+  return currentPath
 }
 
 export async function createPatient(
   supabase: SupabaseServerClient,
   clinicId: string,
+  profileId: string | undefined,
   input: NewPatientInput,
+  photoFile?: File | null,
 ): Promise<PatientRow> {
   const { data, error } = await supabase
     .from('patients')
     .insert({
       clinic_id: clinicId,
-      full_name: input.fullName,
+      first_name: input.firstName,
+      last_name: input.lastName,
       phone: input.phone,
       gender: input.gender,
       birthday: input.birthday,
       address: input.address,
+      created_by: profileId ?? null,
+      updated_by: profileId ?? null,
       ...profileColumns(input),
     })
     .select(SELECT)
     .single()
 
   if (error) throw error
-  return mapPatientRow(data as unknown as PatientQueryRow)
+  const row = data as unknown as PatientQueryRow
+  const patient = mapPatientRow(row, '')
+
+  if (input.medicalHistory) {
+    await upsertPatientMedicalHistory(
+      supabase,
+      clinicId,
+      patient.id,
+      profileId,
+      input.medicalHistory,
+    )
+  }
+  if (input.consentForm) {
+    await upsertPatientConsentForm(
+      supabase,
+      clinicId,
+      patient.id,
+      profileId,
+      input.consentForm,
+    )
+  }
+
+  const photoPath = await resolvePatientPhotoPath(
+    supabase,
+    clinicId,
+    patient.id,
+    row.photo_path,
+    photoFile,
+    false,
+  )
+  patient.photoUrl = photoPath
+    ? await signPatientPhotoUrl(supabase, photoPath)
+    : ''
+
+  return patient
 }
 
 export async function updatePatient(
   supabase: SupabaseServerClient,
   clinicId: string,
   patientId: string,
+  profileId: string | undefined,
   input: UpdatePatientInput,
+  photoFile?: File | null,
+  removePhoto?: boolean,
 ): Promise<PatientRow> {
   const { data, error } = await supabase
     .from('patients')
     .update({
-      full_name: input.fullName,
+      first_name: input.firstName,
+      last_name: input.lastName,
       phone: input.phone,
       gender: input.gender,
       birthday: input.birthday,
       address: input.address,
+      updated_by: profileId ?? null,
+      updated_at: new Date().toISOString(),
       ...profileColumns(input),
     })
     .eq('clinic_id', clinicId)
@@ -219,8 +441,55 @@ export async function updatePatient(
     .single()
 
   if (error) throw error
-  return mapPatientRow(data as unknown as PatientQueryRow)
+  const row = data as unknown as PatientQueryRow
+  const patient = mapPatientRow(row, '')
+
+  if (input.medicalHistory) {
+    await upsertPatientMedicalHistory(
+      supabase,
+      clinicId,
+      patient.id,
+      profileId,
+      input.medicalHistory,
+    )
+  }
+  if (input.consentForm) {
+    await upsertPatientConsentForm(
+      supabase,
+      clinicId,
+      patient.id,
+      profileId,
+      input.consentForm,
+    )
+  }
+
+  const photoPath = await resolvePatientPhotoPath(
+    supabase,
+    clinicId,
+    patient.id,
+    row.photo_path,
+    photoFile,
+    removePhoto,
+  )
+  patient.photoUrl = photoPath
+    ? await signPatientPhotoUrl(supabase, photoPath)
+    : ''
+
+  return patient
 }
+
+export async function getPatientIntakeExtras(
+  supabase: SupabaseServerClient,
+  patientId: string,
+) {
+  const [medicalHistory, consentForm] = await Promise.all([
+    getPatientMedicalHistory(supabase, patientId),
+    getPatientConsentForm(supabase, patientId),
+  ])
+  return { medicalHistory, consentForm }
+}
+
+export { isMinor }
 
 export interface PatientSearchResult {
   id: string
