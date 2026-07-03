@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -9,7 +10,6 @@ import {
   LogOut,
   Receipt,
   Settings,
-  Stethoscope,
   Users,
   Wallet,
   X,
@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils'
 import { signOut } from '@/app/login/actions'
 import { useClinicContext } from '@/components/layout/clinic-context'
+import logoImage from '../../../public/mmdg icon.png'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
@@ -65,8 +66,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         )}
       >
         <div className="flex h-16 items-center gap-2 border-b px-6">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Stethoscope className="size-5" />
+          <div className="flex size-9 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-border">
+            <Image
+              src={logoImage}
+              alt="MMDG Dental"
+              className="size-8 object-contain"
+            />
           </div>
           <div className="leading-tight">
             <p className="text-sm font-semibold">MMDG Dental</p>

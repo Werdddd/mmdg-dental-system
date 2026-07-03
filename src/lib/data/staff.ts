@@ -48,3 +48,35 @@ export async function getStaffUsers(
     createdAt: p.created_at,
   }))
 }
+
+export async function getSuperAdmins(
+  supabase: SupabaseServerClient,
+): Promise<StaffUser[]> {
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, role, clinic_id, specialty, created_at')
+    .eq('role', 'superadmin')
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  if (!profiles?.length) return []
+
+  const admin = createAdminClient()
+  const {
+    data: { users },
+    error: authError,
+  } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  if (authError) throw authError
+
+  const emailById = new Map(users.map((u) => [u.id, u.email ?? '']))
+
+  return profiles.map((p) => ({
+    id: p.id,
+    email: emailById.get(p.id) ?? '',
+    fullName: p.full_name ?? '',
+    role: p.role as UserRole,
+    clinicId: p.clinic_id,
+    specialty: p.specialty ?? null,
+    createdAt: p.created_at,
+  }))
+}

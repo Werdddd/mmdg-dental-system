@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentProfile } from '@/lib/auth/profile'
+import { defaultPassword } from '@/lib/auth/default-password'
 import type { UserRole } from '@/lib/auth/types'
 
 type ActionResult = { error?: string }
@@ -69,14 +70,6 @@ export async function deleteClinicAction(id: string): Promise<ActionResult> {
 }
 
 /* ---------- Staff / User Access ---------- */
-
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
-}
-
-function defaultPassword(firstName: string, lastName: string) {
-  return `${capitalize(firstName)}${capitalize(lastName)}${new Date().getFullYear()}`
-}
 
 export async function addStaffAction(
   email: string,

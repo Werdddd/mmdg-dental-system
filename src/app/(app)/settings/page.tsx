@@ -1,5 +1,6 @@
 import { getCurrentProfile } from '@/lib/auth/profile'
 import { createClient } from '@/lib/supabase/server'
+import { getSuperAdmins } from '@/lib/data/staff'
 import { SettingsView } from '@/components/settings/settings-view'
 import type { CurrentUserProfile } from '@/components/settings/profile-panel'
 
@@ -34,12 +35,19 @@ export default async function SettingsPage() {
     email,
     role: profile?.role ?? 'dentist',
     clinicName,
-    specialty: (profile as { specialty?: string | null } | null)?.specialty ?? null,
+    specialty:
+      (profile as { specialty?: string | null } | null)?.specialty ?? null,
   }
 
   const isSuperAdmin = profile?.role === 'superadmin'
+  const superAdmins = isSuperAdmin ? await getSuperAdmins(supabase) : []
 
   return (
-    <SettingsView currentProfile={currentProfile} isSuperAdmin={isSuperAdmin} />
+    <SettingsView
+      currentProfile={currentProfile}
+      isSuperAdmin={isSuperAdmin}
+      superAdmins={superAdmins}
+      currentUserId={profile?.id ?? ''}
+    />
   )
 }
