@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   Building2,
   CalendarDays,
+  FolderOpen,
   LayoutDashboard,
   LogOut,
   Receipt,
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { label: 'Appointments', icon: CalendarDays, href: '/appointments' },
   { label: 'Patients', icon: Users, href: '/patients' },
+  { label: 'Documents', icon: FolderOpen, href: '/documents' },
   { label: 'Payments', icon: Wallet, href: '/payments' },
   { label: 'Invoices', icon: Receipt, href: '/invoices' },
   { label: 'Settings', icon: Settings, href: '/settings' },
