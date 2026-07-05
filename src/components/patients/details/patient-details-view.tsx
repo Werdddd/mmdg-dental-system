@@ -16,6 +16,7 @@ import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
 import type { PaymentRow } from '@/components/payments/data'
 import type { PatientMedicalHistoryRow } from '@/lib/data/patient-medical-history'
 import type { PatientConsentFormRow } from '@/lib/data/patient-consent-forms'
+import type { PatientRadiographConsentRow } from '@/lib/data/patient-radiograph-consents'
 import type { PatientDocumentRow } from '@/lib/data/patient-documents'
 import { getPatientProfile } from '@/components/patients/details/data'
 import { PatientHeaderCard } from '@/components/patients/details/patient-header-card'
@@ -24,6 +25,7 @@ import { DentalVisitCard } from '@/components/patients/details/dental-visit-card
 import { PatientNotesCard } from '@/components/patients/details/patient-notes-card'
 import { MedicalHistoryCard } from '@/components/patients/details/medical-history-card'
 import { ConsentFormCard } from '@/components/patients/details/consent-form-card'
+import { RadiographConsentCard } from '@/components/patients/details/radiograph-consent-card'
 import { SystemMetadataCard } from '@/components/patients/details/system-metadata-card'
 import { MedicalRecordsTabs } from '@/components/patients/details/medical-records-tabs'
 
@@ -39,6 +41,7 @@ interface PatientDetailsViewProps {
   documents: PatientDocumentRow[]
   medicalHistory: PatientMedicalHistoryRow | null
   consentForm: PatientConsentFormRow | null
+  radiographConsent: PatientRadiographConsentRow | null
 }
 
 export function PatientDetailsView({
@@ -53,14 +56,14 @@ export function PatientDetailsView({
   documents,
   medicalHistory,
   consentForm,
+  radiographConsent,
 }: PatientDetailsViewProps) {
   const profile = getPatientProfile(patient)
   const { activeClinicId, isSuperAdmin } = useClinicContext()
   // A visiting clinic (not the patient's home clinic) gets a read-only
   // chart — only Log Treatment stays writable for them. SuperAdmin is
   // never treated as "foreign" since their RLS access isn't clinic-scoped.
-  const isForeignPatient =
-    !isSuperAdmin && patient.clinicId !== activeClinicId
+  const isForeignPatient = !isSuperAdmin && patient.clinicId !== activeClinicId
 
   return (
     <>
@@ -89,12 +92,18 @@ export function PatientDetailsView({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         <MedicalHistoryCard
           medicalHistory={medicalHistory}
           isFemale={patient.gender === 'Female'}
         />
         <ConsentFormCard consentForm={consentForm} patientName={patient.name} />
+        <RadiographConsentCard
+          patientId={patient.id}
+          patientName={patient.name}
+          patientAddress={patient.address}
+          radiographConsent={radiographConsent}
+        />
         <SystemMetadataCard metadata={profile.systemMetadata} />
       </div>
 

@@ -68,6 +68,7 @@ export default async function PatientDetailsPage({
       payments={payments}
       medicalHistory={intakeExtras.medicalHistory}
       consentForm={intakeExtras.consentForm}
+      radiographConsent={intakeExtras.radiographConsent}
     />
   )
 }

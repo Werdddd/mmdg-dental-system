@@ -14,7 +14,11 @@ import {
 import { Input } from '@/components/ui/input' // used for date/time fields
 import { PatientPicker } from '@/components/shared/patient-picker'
 import { DentistPicker } from '@/components/shared/dentist-picker'
-import type { AppointmentRow, AppointmentStatus } from '@/components/appointments/data'
+import { RadiographConsentDialog } from '@/components/appointments/radiograph-consent-dialog'
+import type {
+  AppointmentRow,
+  AppointmentStatus,
+} from '@/components/appointments/data'
 import type { PatientRow } from '@/components/patients/data'
 import type { DentistOption } from '@/lib/data/dentists'
 import { addAppointmentAction } from '@/app/(app)/appointments/actions'
@@ -44,6 +48,12 @@ export function AddAppointmentDialog({
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [radiographPrompt, setRadiographPrompt] = useState<{
+    patientId: string
+    patientName: string
+    patientAddress: string
+    dentistName: string
+  } | null>(null)
 
   // Sync the pre-filled date whenever the dialog opens with a new initialDate
   useEffect(() => {
@@ -81,6 +91,18 @@ export function AddAppointmentDialog({
         notes: notes.trim(),
       })
       onAdd(appointment)
+
+      if (appointment.isFirstAppointment) {
+        const patient = patients.find((p) => p.id === patientId)
+        const dentist = dentists.find((d) => d.id === dentistId)
+        setRadiographPrompt({
+          patientId,
+          patientName: patient?.name ?? '',
+          patientAddress: patient?.address ?? '',
+          dentistName: dentist?.name ?? '',
+        })
+      }
+
       resetForm()
       onOpenChange(false)
     } catch {
@@ -91,85 +113,98 @@ export function AddAppointmentDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        onOpenChange(next)
-        if (!next) resetForm()
-      }}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>New Appointment</DialogTitle>
-          <DialogDescription>
-            Schedule a new patient appointment.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          onOpenChange(next)
+          if (!next) resetForm()
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Appointment</DialogTitle>
+            <DialogDescription>
+              Schedule a new patient appointment.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          <PatientPicker
-            patients={patients}
-            value={patientId}
-            onValueChange={setPatientId}
-          />
-
-          <DentistPicker
-            dentists={dentists}
-            value={dentistId}
-            onValueChange={setDentistId}
-          />
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Date</label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(event) => setDate(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Time</label>
-              <Input
-                type="time"
-                value={time}
-                onChange={(event) => setTime(event.target.value)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Treatment Plan{' '}
-              <span className="font-normal text-muted-foreground">
-                (optional)
-              </span>
-            </label>
-            <textarea
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="e.g. Routine cleaning, root canal, braces adjustment…"
-              rows={3}
-              className="flex w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          <div className="space-y-4">
+            <PatientPicker
+              patients={patients}
+              value={patientId}
+              onValueChange={setPatientId}
             />
+
+            <DentistPicker
+              dentists={dentists}
+              value={dentistId}
+              onValueChange={setDentistId}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Date</label>
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Time</label>
+                <Input
+                  type="time"
+                  value={time}
+                  onChange={(event) => setTime(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">
+                Treatment Plan{' '}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </label>
+              <textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="e.g. Routine cleaning, root canal, braces adjustment…"
+                rows={3}
+                className="flex w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          )}
-        </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={!canSubmit}>
+              {isSubmitting ? 'Adding…' : 'Add Appointment'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit}>
-            {isSubmitting ? 'Adding…' : 'Add Appointment'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <RadiographConsentDialog
+        open={radiographPrompt !== null}
+        onOpenChange={(next) => {
+          if (!next) setRadiographPrompt(null)
+        }}
+        patientId={radiographPrompt?.patientId ?? ''}
+        patientName={radiographPrompt?.patientName ?? ''}
+        patientAddress={radiographPrompt?.patientAddress ?? ''}
+        defaultDentistName={radiographPrompt?.dentistName}
+      />
+    </>
   )
 }

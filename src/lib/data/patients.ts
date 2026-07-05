@@ -17,6 +17,7 @@ import {
   upsertPatientConsentForm,
   type ConsentFormInput,
 } from '@/lib/data/patient-consent-forms'
+import { getPatientRadiographConsent } from '@/lib/data/patient-radiograph-consents'
 import {
   deletePatientPhoto,
   signPatientPhotoUrl,
@@ -489,11 +490,12 @@ export async function getPatientIntakeExtras(
   supabase: SupabaseServerClient,
   patientId: string,
 ) {
-  const [medicalHistory, consentForm] = await Promise.all([
+  const [medicalHistory, consentForm, radiographConsent] = await Promise.all([
     getPatientMedicalHistory(supabase, patientId),
     getPatientConsentForm(supabase, patientId),
+    getPatientRadiographConsent(supabase, patientId),
   ])
-  return { medicalHistory, consentForm }
+  return { medicalHistory, consentForm, radiographConsent }
 }
 
 export { isMinor }

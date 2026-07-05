@@ -34,6 +34,10 @@ import {
   signPatientDocumentUrl,
   uploadPatientDocument,
 } from '@/lib/data/patient-documents'
+import {
+  upsertPatientRadiographConsent,
+  type RadiographConsentInput,
+} from '@/lib/data/patient-radiograph-consents'
 import type { ClinicBranch } from '@/lib/dental/branches'
 
 export async function addPatientAction(
@@ -255,6 +259,23 @@ export async function deletePatientDocumentAction(
 ) {
   const supabase = await createClient()
   await deletePatientDocument(supabase, documentId)
+  revalidatePath(`/patients/${patientId}`)
+}
+
+export async function savePatientRadiographConsentAction(
+  patientId: string,
+  input: RadiographConsentInput,
+) {
+  const clinicId = await getActiveClinicId()
+  const supabase = await createClient()
+  const profile = await getCurrentProfile()
+  await upsertPatientRadiographConsent(
+    supabase,
+    clinicId,
+    patientId,
+    profile?.id,
+    input,
+  )
   revalidatePath(`/patients/${patientId}`)
 }
 

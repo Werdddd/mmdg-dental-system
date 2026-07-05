@@ -130,13 +130,15 @@ export async function getPatientAppointments(
 
   if (error) throw error
 
-  return ((data ?? []) as unknown as {
-    id: string
-    scheduled_at: string
-    notes: string | null
-    status: AppointmentStatus
-    dentist: { full_name: string | null } | null
-  }[]).map((row) => ({
+  return (
+    (data ?? []) as unknown as {
+      id: string
+      scheduled_at: string
+      notes: string | null
+      status: AppointmentStatus
+      dentist: { full_name: string | null } | null
+    }[]
+  ).map((row) => ({
     id: row.id,
     scheduledAt: row.scheduled_at,
     notes: row.notes,
@@ -158,7 +160,7 @@ export async function createAppointment(
   supabase: SupabaseServerClient,
   clinicId: string,
   input: NewAppointmentInput,
-): Promise<AppointmentRow> {
+): Promise<AppointmentRow & { isFirstAppointment: boolean }> {
   const scheduledAt = new Date(`${input.date}T${input.time}`).toISOString()
 
   const { data, error } = await supabase
@@ -176,7 +178,21 @@ export async function createAppointment(
     .single()
 
   if (error) throw error
-  return mapAppointmentRow(data as unknown as AppointmentQueryRow)
+
+  // Counted across all clinics (not just this one) since a patient's
+  // appointment history is shared across MMDG's clinics — see
+  // patients/appointments cross-clinic SELECT policy in migration 0018.
+  const { count, error: countError } = await supabase
+    .from('appointments')
+    .select('id', { count: 'exact', head: true })
+    .eq('patient_id', input.patientId)
+
+  if (countError) throw countError
+
+  return {
+    ...mapAppointmentRow(data as unknown as AppointmentQueryRow),
+    isFirstAppointment: (count ?? 0) <= 1,
+  }
 }
 
 export async function updateAppointmentStatus(
