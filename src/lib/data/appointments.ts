@@ -116,6 +116,38 @@ export async function getTodayAppointments(
   )
 }
 
+export async function getUpcomingReminders(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  daysAhead = 3,
+): Promise<AppointmentRow[]> {
+  const now = new Date()
+  const startOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + daysAhead,
+  ).toISOString()
+  const endOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + daysAhead + 1,
+  ).toISOString()
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(SELECT)
+    .eq('clinic_id', clinicId)
+    .gte('scheduled_at', startOfDay)
+    .lt('scheduled_at', endOfDay)
+    .not('status', 'in', '("Cancelled","Completed","No Show")')
+    .order('scheduled_at', { ascending: true })
+
+  if (error) throw error
+  return ((data ?? []) as unknown as AppointmentQueryRow[]).map(
+    mapAppointmentRow,
+  )
+}
+
 export async function getPatientAppointments(
   supabase: SupabaseServerClient,
   clinicId: string,

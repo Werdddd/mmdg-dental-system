@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, CalendarCheck, Menu } from 'lucide-react'
+import { Bell, BellRing, CalendarCheck, Menu } from 'lucide-react'
 import Link from 'next/link'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -60,6 +60,7 @@ interface TopNavbarProps {
   profileRole?: UserRole
   profileSpecialty?: string | null
   todayAppointments?: AppointmentRow[]
+  reminderAppointments?: AppointmentRow[]
 }
 
 export function TopNavbar({
@@ -68,11 +69,12 @@ export function TopNavbar({
   profileRole = 'dentist',
   profileSpecialty = null,
   todayAppointments = [],
+  reminderAppointments = [],
 }: TopNavbarProps) {
   const initials = profileName ? initialsOf(profileName) : '—'
   const displayName = profileName || 'User'
   const displaySubtitle = subtitle(profileRole, profileSpecialty)
-  const notifCount = todayAppointments.length
+  const notifCount = todayAppointments.length + reminderAppointments.length
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card/95 px-4 backdrop-blur supports-backdrop-filter:bg-card/75 sm:px-6">
@@ -94,7 +96,7 @@ export function TopNavbar({
         {/* Notification bell */}
         <DropdownMenu>
           <DropdownMenuTrigger
-            aria-label={`Notifications — ${notifCount} today`}
+            aria-label={`Notifications — ${notifCount} new`}
             className="relative flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <Bell className="size-5" />
@@ -116,48 +118,105 @@ export function TopNavbar({
                 <p className="text-sm font-semibold">Notifications</p>
                 <p className="text-xs text-muted-foreground">
                   {notifCount === 0
-                    ? 'No appointments today'
-                    : `${notifCount} appointment${notifCount !== 1 ? 's' : ''} today`}
+                    ? 'No notifications'
+                    : [
+                        todayAppointments.length > 0 &&
+                          `${todayAppointments.length} today`,
+                        reminderAppointments.length > 0 &&
+                          `${reminderAppointments.length} upcoming`,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
                 </p>
               </div>
               {notifCount > 0 && <Badge variant="purple">{notifCount}</Badge>}
             </div>
 
             {/* List */}
-            {todayAppointments.length === 0 ? (
+            {notifCount === 0 ? (
               <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
                 <CalendarCheck className="size-8 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">
-                  All clear — no appointments scheduled for today.
+                  All clear — no appointments today or upcoming reminders.
                 </p>
               </div>
             ) : (
-              <ul className="max-h-72 divide-y overflow-y-auto">
-                {todayAppointments.map((appt) => (
-                  <li
-                    key={appt.id}
-                    className="flex items-start gap-3 px-4 py-3 hover:bg-muted/50"
-                  >
-                    <span
-                      className={cn(
-                        'mt-1.5 size-2 shrink-0 rounded-full',
-                        STATUS_DOT[appt.status] ?? 'bg-primary',
-                      )}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
-                        {appt.patient.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {appt.time} · {appt.dentist.name}
-                      </p>
-                    </div>
-                    <Badge variant="secondary" className="shrink-0 text-[10px]">
-                      {appt.status}
-                    </Badge>
-                  </li>
-                ))}
-              </ul>
+              <div className="max-h-96 overflow-y-auto">
+                {todayAppointments.length > 0 && (
+                  <div>
+                    <p className="px-4 pt-3 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                      Today
+                    </p>
+                    <ul className="divide-y">
+                      {todayAppointments.map((appt) => (
+                        <li
+                          key={appt.id}
+                          className="flex items-start gap-3 px-4 py-3 hover:bg-muted/50"
+                        >
+                          <span
+                            className={cn(
+                              'mt-1.5 size-2 shrink-0 rounded-full',
+                              STATUS_DOT[appt.status] ?? 'bg-primary',
+                            )}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">
+                              {appt.patient.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {appt.time} · {appt.dentist.name}
+                            </p>
+                          </div>
+                          <Badge
+                            variant="secondary"
+                            className="shrink-0 text-[10px]"
+                          >
+                            {appt.status}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {reminderAppointments.length > 0 && (
+                  <div>
+                    <p className="flex items-center gap-1 px-4 pt-3 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                      <BellRing className="size-3 text-amber-500" />
+                      In 3 days — remind patients
+                    </p>
+                    <ul className="divide-y">
+                      {reminderAppointments.map((appt) => (
+                        <li
+                          key={appt.id}
+                          className="flex items-start gap-3 px-4 py-3 hover:bg-muted/50"
+                        >
+                          <span
+                            className={cn(
+                              'mt-1.5 size-2 shrink-0 rounded-full',
+                              STATUS_DOT[appt.status] ?? 'bg-primary',
+                            )}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">
+                              {appt.patient.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {appt.date} · {appt.time} · {appt.dentist.name}
+                            </p>
+                          </div>
+                          <Badge
+                            variant="secondary"
+                            className="shrink-0 text-[10px]"
+                          >
+                            {appt.status}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Footer link */}

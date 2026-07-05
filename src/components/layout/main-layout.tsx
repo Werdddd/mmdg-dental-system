@@ -18,6 +18,7 @@ interface MainLayoutProps {
   profileRole?: UserRole
   profileSpecialty?: string | null
   todayAppointments?: AppointmentRow[]
+  reminderAppointments?: AppointmentRow[]
 }
 
 export function MainLayout({
@@ -29,6 +30,7 @@ export function MainLayout({
   profileRole = 'dentist',
   profileSpecialty = null,
   todayAppointments = [],
+  reminderAppointments = [],
 }: MainLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -44,6 +46,7 @@ export function MainLayout({
             profileRole={profileRole}
             profileSpecialty={profileSpecialty}
             todayAppointments={todayAppointments}
+            reminderAppointments={reminderAppointments}
           />
 
           <main className="flex-1 space-y-6 p-4 sm:p-6">{children}</main>

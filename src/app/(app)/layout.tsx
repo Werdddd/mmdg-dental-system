@@ -4,7 +4,10 @@ import { getCurrentProfile } from '@/lib/auth/profile'
 import { createClient } from '@/lib/supabase/server'
 import { getClinics, type ClinicRecord } from '@/lib/data/clinics'
 import { getActiveClinicId } from '@/lib/data/clinic'
-import { getTodayAppointments } from '@/lib/data/appointments'
+import {
+  getTodayAppointments,
+  getUpcomingReminders,
+} from '@/lib/data/appointments'
 import { MainLayout } from '@/components/layout/main-layout'
 import type { AppointmentRow } from '@/components/appointments/data'
 
@@ -21,18 +24,23 @@ export default async function AppGroupLayout({
   let clinics: ClinicRecord[] = []
   let activeClinicId: string | null = null
   let todayAppointments: AppointmentRow[] = []
+  let reminderAppointments: AppointmentRow[] = []
 
   try {
     const clinicId = await getActiveClinicId()
     activeClinicId = clinicId
 
     if (isSuperAdmin) {
-      ;[clinics, todayAppointments] = await Promise.all([
+      ;[clinics, todayAppointments, reminderAppointments] = await Promise.all([
         getClinics(supabase),
         getTodayAppointments(supabase, clinicId),
+        getUpcomingReminders(supabase, clinicId),
       ])
     } else {
-      todayAppointments = await getTodayAppointments(supabase, clinicId)
+      ;[todayAppointments, reminderAppointments] = await Promise.all([
+        getTodayAppointments(supabase, clinicId),
+        getUpcomingReminders(supabase, clinicId),
+      ])
     }
   } catch {
     // No clinic yet — notifications stay empty
@@ -49,6 +57,7 @@ export default async function AppGroupLayout({
         (profile as { specialty?: string | null } | null)?.specialty ?? null
       }
       todayAppointments={todayAppointments}
+      reminderAppointments={reminderAppointments}
     >
       {children}
     </MainLayout>

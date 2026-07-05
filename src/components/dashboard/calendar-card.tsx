@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { CalendarPlus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { BellRing, CalendarPlus, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -73,6 +73,9 @@ export function CalendarCard({
 }: CalendarCardProps) {
   const now = new Date()
   const todayIso = now.toISOString().slice(0, 10)
+  const reminderDate = new Date(now)
+  reminderDate.setDate(reminderDate.getDate() + 3)
+  const reminderIso = reminderDate.toISOString().slice(0, 10)
 
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
@@ -108,6 +111,21 @@ export function CalendarCard({
         .filter((a) => a.scheduledAt.slice(0, 10) === selectedDate)
         .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)),
     [appointments, selectedDate],
+  )
+
+  // Appointments 3 days from now that still need a reminder call
+  const reminderAppointments = useMemo(
+    () =>
+      appointments
+        .filter(
+          (a) =>
+            a.scheduledAt.slice(0, 10) === reminderIso &&
+            a.status !== 'Cancelled' &&
+            a.status !== 'Completed' &&
+            a.status !== 'No Show',
+        )
+        .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)),
+    [appointments, reminderIso],
   )
 
   function prevMonth() {
@@ -151,7 +169,7 @@ export function CalendarCard({
   }
 
   return (
-    <div className="flex h-[32rem] flex-col rounded-xl border bg-card p-5 shadow-sm">
+    <div className="flex h-[36rem] flex-col rounded-xl border bg-card p-5 shadow-sm">
       {/* Month nav */}
       <div className="flex shrink-0 items-center justify-between">
         <h2 className="text-base font-semibold">
@@ -277,6 +295,49 @@ export function CalendarCard({
                   'flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/60',
                   selectedDate === todayIso && 'bg-card shadow-sm hover:bg-muted/40',
                 )}
+              >
+                <span
+                  className={cn(
+                    'mt-0.5 size-1.5 shrink-0 rounded-full',
+                    STATUS_DOT[appt.status] ?? 'bg-primary',
+                  )}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium">
+                    {appt.patient.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {appt.time} · {appt.dentist.name}
+                  </p>
+                </div>
+                <Badge variant="secondary" className="shrink-0 text-[10px]">
+                  {appt.status}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Upcoming reminders — 3 days out */}
+      <div className="mt-3 shrink-0 rounded-lg border-t pt-3">
+        <div className="flex items-center gap-1.5">
+          <BellRing className="size-3.5 text-amber-500" />
+          <h3 className="text-sm font-semibold">Upcoming Reminders</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {reminderAppointments.length === 0
+            ? `No appointments to remind for ${formatHeading(reminderIso)}`
+            : `${reminderAppointments.length} appointment${reminderAppointments.length !== 1 ? 's' : ''} on ${formatHeading(reminderIso)} — remind patients`}
+        </p>
+
+        {reminderAppointments.length > 0 && (
+          <ul className="mt-2 max-h-28 space-y-2 overflow-y-auto">
+            {reminderAppointments.map((appt) => (
+              <li
+                key={appt.id}
+                onClick={() => handleApptClick(appt)}
+                className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/60"
               >
                 <span
                   className={cn(
