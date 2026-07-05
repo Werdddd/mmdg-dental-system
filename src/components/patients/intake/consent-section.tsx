@@ -94,7 +94,10 @@ export function ConsentSection({ values, onChange }: ConsentSectionProps) {
             required
             value={values.consentPatientSignature}
             onChange={(consentPatientSignature) =>
-              onChange({ consentPatientSignature })
+              onChange({
+                consentPatientSignature,
+                consentPostOpAckSignature: consentPatientSignature,
+              })
             }
             nameOptions={[patientName]}
             className="sm:col-span-1"
