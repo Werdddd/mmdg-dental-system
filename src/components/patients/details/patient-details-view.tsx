@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useClinicContext } from '@/components/layout/clinic-context'
 import type { PatientRow } from '@/components/patients/data'
 import type { PatientNoteEntry } from '@/lib/data/patient-notes'
 import type { ToothRecord } from '@/lib/data/dental-chart'
@@ -51,6 +52,12 @@ export function PatientDetailsView({
   consentForm,
 }: PatientDetailsViewProps) {
   const profile = getPatientProfile(patient)
+  const { activeClinicId, isSuperAdmin } = useClinicContext()
+  // A visiting clinic (not the patient's home clinic) gets a read-only
+  // chart — only Log Treatment stays writable for them. SuperAdmin is
+  // never treated as "foreign" since their RLS access isn't clinic-scoped.
+  const isForeignPatient =
+    !isSuperAdmin && patient.clinicId !== activeClinicId
 
   return (
     <>
@@ -62,12 +69,20 @@ export function PatientDetailsView({
         Back to Patients
       </Link>
 
-      <PatientHeaderCard patient={patient} profile={profile} />
+      <PatientHeaderCard
+        patient={patient}
+        profile={profile}
+        readOnly={isForeignPatient}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <PatientAboutCard about={profile.about} />
         <DentalVisitCard visit={profile.dentalVisit} />
-        <PatientNotesCard patientId={patient.id} notes={notes} />
+        <PatientNotesCard
+          patientId={patient.id}
+          notes={notes}
+          readOnly={isForeignPatient}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -87,6 +102,7 @@ export function PatientDetailsView({
         photos={photos}
         dentists={dentists}
         payments={payments}
+        readOnlyChart={isForeignPatient}
       />
     </>
   )

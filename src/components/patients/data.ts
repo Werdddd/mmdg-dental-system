@@ -43,6 +43,8 @@ export function formatPatientCode(patientNumber: number) {
 export interface PatientRow {
   id: string
   patientNumber: number
+  clinicId: string
+  clinicName: string
   name: string
   initials: string
   photoUrl: string

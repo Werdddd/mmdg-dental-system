@@ -13,6 +13,8 @@ export interface TreatmentRecordRow {
   treatment: string
   dentistId: string | null
   dentist: string
+  clinicId: string
+  clinicName: string
   cost: number
   status: TreatmentRecordStatus
   performedAt: string
@@ -26,18 +28,21 @@ interface TreatmentRecordQueryRow {
   branch: ClinicBranch | null
   treatment: string
   dentist_id: string | null
+  clinic_id: string
   cost: string | number
   status: TreatmentRecordStatus
   performed_at: string
   notes: string | null
   patient: { full_name: string } | null
   dentist: { full_name: string | null } | null
+  clinic: { name: string } | null
 }
 
 const SELECT = `
-  id, patient_id, tooth, branch, treatment, dentist_id, cost, status, performed_at, notes,
+  id, patient_id, tooth, branch, treatment, dentist_id, clinic_id, cost, status, performed_at, notes,
   patient:patients ( full_name ),
-  dentist:profiles ( full_name )
+  dentist:profiles ( full_name ),
+  clinic:clinics ( name )
 `
 
 function mapRow(row: TreatmentRecordQueryRow): TreatmentRecordRow {
@@ -50,6 +55,8 @@ function mapRow(row: TreatmentRecordQueryRow): TreatmentRecordRow {
     treatment: row.treatment,
     dentistId: row.dentist_id,
     dentist: row.dentist?.full_name ?? '—',
+    clinicId: row.clinic_id,
+    clinicName: row.clinic?.name ?? 'Unknown Clinic',
     cost: Number(row.cost),
     status: row.status,
     performedAt: formatDisplayDate(row.performed_at.slice(0, 10)),
@@ -72,15 +79,16 @@ export async function getPendingTreatmentRecords(
   return ((data ?? []) as unknown as TreatmentRecordQueryRow[]).map(mapRow)
 }
 
+// No clinic_id filter — a patient's treatment history spans every clinic
+// that has treated them, not just the viewer's own clinic. RLS still
+// governs which rows are actually visible.
 export async function getTreatmentRecordsForPatient(
   supabase: SupabaseServerClient,
-  clinicId: string,
   patientId: string,
 ): Promise<TreatmentRecordRow[]> {
   const { data, error } = await supabase
     .from('treatment_records')
     .select(SELECT)
-    .eq('clinic_id', clinicId)
     .eq('patient_id', patientId)
     .order('performed_at', { ascending: false })
 

@@ -36,6 +36,8 @@ interface AppointmentRow {
 interface PatientQueryRow {
   id: string
   patient_number: number
+  clinic_id: string
+  clinic: { name: string } | null
   full_name: string
   first_name: string | null
   middle_name: string | null
@@ -75,7 +77,8 @@ interface PatientQueryRow {
 }
 
 const SELECT = `
-  id, patient_number, full_name, first_name, middle_name, last_name, suffix,
+  id, patient_number, clinic_id, clinic:clinics ( name ),
+  full_name, first_name, middle_name, last_name, suffix,
   gender, birthday, address, phone, telephone_number, preferred_contact_method, occupation,
   treatment_status, created_at,
   email, nationality, civil_status,
@@ -129,6 +132,8 @@ function mapPatientRow(row: PatientQueryRow, photoUrl: string): PatientRow {
   return {
     id: row.id,
     patientNumber: row.patient_number,
+    clinicId: row.clinic_id,
+    clinicName: row.clinic?.name ?? 'Unknown Clinic',
     name: row.full_name,
     initials: initialsOf(row.full_name),
     photoUrl,
@@ -286,15 +291,17 @@ function profileColumns(input: PatientProfileInput) {
   }
 }
 
+// Scoped by RLS only (no explicit clinic_id filter) — same cross-clinic
+// pattern as searchPatients() below, so any authorized clinic-staff member
+// can open a shared patient's chart regardless of which clinic it belongs
+// to.
 export async function getPatientById(
   supabase: SupabaseServerClient,
-  clinicId: string,
   patientId: string,
 ): Promise<PatientRow | null> {
   const { data, error } = await supabase
     .from('patients')
     .select(SELECT)
-    .eq('clinic_id', clinicId)
     .eq('id', patientId)
     .single()
 

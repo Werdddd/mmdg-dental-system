@@ -216,12 +216,14 @@ interface DentalChartPhotosProps {
   patientId: string
   photos: ToothPhoto[]
   defaultTooth: number | null
+  readOnly?: boolean
 }
 
 export function DentalChartPhotos({
   patientId,
   photos,
   defaultTooth,
+  readOnly = false,
 }: DentalChartPhotosProps) {
   const router = useRouter()
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -244,15 +246,17 @@ export function DentalChartPhotos({
         title="Chart Photos"
         icon={Images}
         action={
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5"
-            onClick={() => setUploadOpen(true)}
-          >
-            <ImagePlus className="size-3.5" />
-            Upload Photo
-          </Button>
+          !readOnly && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setUploadOpen(true)}
+            >
+              <ImagePlus className="size-3.5" />
+              Upload Photo
+            </Button>
+          )
         }
       >
         {photos.length === 0 ? (
@@ -283,15 +287,17 @@ export function DentalChartPhotos({
                     {toothOptionLabel(photo.tooth)}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  aria-label="Delete photo"
-                  onClick={() => handleDelete(photo.id)}
-                  disabled={deletingId === photo.id}
-                  className="absolute top-1.5 right-1.5 inline-flex size-6 items-center justify-center rounded-md bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive disabled:opacity-50"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    aria-label="Delete photo"
+                    onClick={() => handleDelete(photo.id)}
+                    disabled={deletingId === photo.id}
+                    className="absolute top-1.5 right-1.5 inline-flex size-6 items-center justify-center rounded-md bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive disabled:opacity-50"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                )}
               </div>
             ))}
           </div>

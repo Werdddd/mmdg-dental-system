@@ -24,13 +24,13 @@ export default async function AppGroupLayout({
 
   try {
     const clinicId = await getActiveClinicId()
+    activeClinicId = clinicId
 
     if (isSuperAdmin) {
       ;[clinics, todayAppointments] = await Promise.all([
         getClinics(supabase),
         getTodayAppointments(supabase, clinicId),
       ])
-      activeClinicId = clinicId
     } else {
       todayAppointments = await getTodayAppointments(supabase, clinicId)
     }

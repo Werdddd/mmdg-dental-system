@@ -71,9 +71,14 @@ const CONDITION_BADGE_VARIANT: Record<
 interface BranchTagsRowProps {
   patientId: string
   activeBranches: ClinicBranch[]
+  readOnly?: boolean
 }
 
-function BranchTagsRow({ patientId, activeBranches }: BranchTagsRowProps) {
+function BranchTagsRow({
+  patientId,
+  activeBranches,
+  readOnly = false,
+}: BranchTagsRowProps) {
   const router = useRouter()
   const [pending, setPending] = useState<ClinicBranch | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -110,7 +115,7 @@ function BranchTagsRow({ patientId, activeBranches }: BranchTagsRowProps) {
               type="button"
               aria-pressed={isActive}
               onClick={() => toggle(branch)}
-              disabled={pending === branch}
+              disabled={readOnly || pending === branch}
               className={cn(
                 'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50',
                 isActive
@@ -139,6 +144,7 @@ interface DentalChartPanelProps {
   branches: ClinicBranch[]
   photos: ToothPhoto[]
   dentists: DentistOption[]
+  readOnly?: boolean
 }
 
 export function DentalChartPanel({
@@ -147,6 +153,7 @@ export function DentalChartPanel({
   branches,
   photos,
   dentists,
+  readOnly = false,
 }: DentalChartPanelProps) {
   const [selectedTooth, setSelectedTooth] = useState<number | null>(null)
   const [editingTooth, setEditingTooth] = useState<number | null>(null)
@@ -168,7 +175,11 @@ export function DentalChartPanel({
   return (
     <div className="space-y-4">
       <div className="rounded-xl border bg-card p-5 shadow-sm">
-        <BranchTagsRow patientId={patientId} activeBranches={branches} />
+        <BranchTagsRow
+          patientId={patientId}
+          activeBranches={branches}
+          readOnly={readOnly}
+        />
 
         <div className="my-4 flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
           {TOOTH_CONDITIONS.map((condition) => (
@@ -246,15 +257,17 @@ export function DentalChartPanel({
           <div className="mt-4 rounded-lg border bg-muted/30 p-4 text-sm">
             <div className="flex items-center justify-between gap-2">
               <p className="font-medium">{formatToothLabel(selectedTooth)}</p>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                onClick={() => setEditingTooth(selectedTooth)}
-              >
-                <Pencil className="size-3.5" />
-                Edit Record
-              </Button>
+              {!readOnly && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => setEditingTooth(selectedTooth)}
+                >
+                  <Pencil className="size-3.5" />
+                  Edit Record
+                </Button>
+              )}
             </div>
             {selectedRecord.condition !== 'Healthy' ? (
               <div className="mt-2 grid grid-cols-2 gap-2 text-muted-foreground sm:grid-cols-4">
@@ -366,11 +379,13 @@ export function DentalChartPanel({
                       >
                         View Record
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setEditingTooth(record.tooth)}
-                      >
-                        Edit Record
-                      </DropdownMenuItem>
+                      {!readOnly && (
+                        <DropdownMenuItem
+                          onClick={() => setEditingTooth(record.tooth)}
+                        >
+                          Edit Record
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -384,6 +399,7 @@ export function DentalChartPanel({
         patientId={patientId}
         photos={photos}
         defaultTooth={selectedTooth}
+        readOnly={readOnly}
       />
 
       <ToothRecordDialog

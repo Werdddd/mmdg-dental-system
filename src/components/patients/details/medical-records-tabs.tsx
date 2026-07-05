@@ -24,6 +24,7 @@ interface MedicalRecordsTabsProps {
   photos: ToothPhoto[]
   dentists: DentistOption[]
   payments: PaymentRow[]
+  readOnlyChart?: boolean
 }
 
 export function MedicalRecordsTabs({
@@ -34,6 +35,7 @@ export function MedicalRecordsTabs({
   photos,
   dentists,
   payments,
+  readOnlyChart = false,
 }: MedicalRecordsTabsProps) {
   const [logTreatmentOpen, setLogTreatmentOpen] = useState(false)
 
@@ -77,6 +79,7 @@ export function MedicalRecordsTabs({
             branches={branches}
             photos={photos}
             dentists={dentists}
+            readOnly={readOnlyChart}
           />
         </TabsContent>
         <TabsContent value="payments">

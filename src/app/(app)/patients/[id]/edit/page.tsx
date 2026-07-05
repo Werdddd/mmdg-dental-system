@@ -1,11 +1,12 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/server'
 import { getActiveClinicId } from '@/lib/data/clinic'
+import { getCurrentProfile } from '@/lib/auth/profile'
 import { getPatientById, getPatientIntakeExtras } from '@/lib/data/patients'
 import { PatientIntakeForm } from '@/components/patients/intake/patient-intake-form'
 import { patientToIntakeFormValues } from '@/components/patients/intake/types'
@@ -19,8 +20,17 @@ export default async function EditPatientPage({
   const supabase = await createClient()
   const clinicId = await getActiveClinicId()
 
-  const patient = await getPatientById(supabase, clinicId, id)
+  const patient = await getPatientById(supabase, id)
   if (!patient) notFound()
+
+  // Only the patient's home clinic can edit their profile — visiting
+  // clinics get a read-only chart on the detail page. RLS already blocks
+  // the actual write; this just avoids showing an edit form that would
+  // fail on submit.
+  const profile = await getCurrentProfile()
+  if (profile?.role !== 'superadmin' && patient.clinicId !== clinicId) {
+    redirect(`/patients/${id}`)
+  }
 
   const { medicalHistory, consentForm } = await getPatientIntakeExtras(
     supabase,

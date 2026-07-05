@@ -17,6 +17,7 @@ import {
 interface PatientNotesCardProps {
   patientId: string
   notes: PatientNoteEntry[]
+  readOnly?: boolean
 }
 
 function NoteComposer({
@@ -64,7 +65,11 @@ function NoteComposer({
   )
 }
 
-export function PatientNotesCard({ patientId, notes }: PatientNotesCardProps) {
+export function PatientNotesCard({
+  patientId,
+  notes,
+  readOnly = false,
+}: PatientNotesCardProps) {
   const router = useRouter()
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -119,6 +124,7 @@ export function PatientNotesCard({ patientId, notes }: PatientNotesCardProps) {
       title="Notes"
       icon={NotebookPen}
       action={
+        !readOnly &&
         !adding && (
           <Button
             size="sm"
@@ -132,7 +138,7 @@ export function PatientNotesCard({ patientId, notes }: PatientNotesCardProps) {
         )
       }
     >
-      {adding && (
+      {!readOnly && adding && (
         <NoteComposer
           placeholder="Write a note about this patient…"
           isSaving={savingId === 'new'}
@@ -152,7 +158,7 @@ export function PatientNotesCard({ patientId, notes }: PatientNotesCardProps) {
       ) : (
         <ul className="space-y-3">
           {notes.map((note) =>
-            editingId === note.id ? (
+            !readOnly && editingId === note.id ? (
               <li key={note.id}>
                 <NoteComposer
                   initialValue={note.content}
@@ -172,25 +178,27 @@ export function PatientNotesCard({ patientId, notes }: PatientNotesCardProps) {
                     {note.authorName} &middot; {note.createdLabel}
                     {note.edited && ' (edited)'}
                   </p>
-                  <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      type="button"
-                      aria-label="Edit note"
-                      onClick={() => setEditingId(note.id)}
-                      className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <Pencil className="size-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Delete note"
-                      onClick={() => handleDelete(note.id)}
-                      disabled={savingId === note.id}
-                      className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  </div>
+                  {!readOnly && (
+                    <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        type="button"
+                        aria-label="Edit note"
+                        onClick={() => setEditingId(note.id)}
+                        className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                      >
+                        <Pencil className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Delete note"
+                        onClick={() => handleDelete(note.id)}
+                        disabled={savingId === note.id}
+                        className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <p className="mt-1 whitespace-pre-wrap text-sm">
                   {note.content}

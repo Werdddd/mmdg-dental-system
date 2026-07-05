@@ -28,11 +28,13 @@ import type { PatientProfile } from '@/components/patients/details/data'
 interface PatientHeaderCardProps {
   patient: PatientRow
   profile: PatientProfile
+  readOnly?: boolean
 }
 
 export function PatientHeaderCard({
   patient,
   profile,
+  readOnly = false,
 }: PatientHeaderCardProps) {
   const [documentsOpen, setDocumentsOpen] = useState(false)
 
@@ -63,6 +65,11 @@ export function PatientHeaderCard({
               >
                 {patient.treatmentStatus}
               </Badge>
+              {readOnly && (
+                <Badge variant="secondary">
+                  Home clinic: {patient.clinicName}
+                </Badge>
+              )}
             </div>
 
             <p className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground sm:justify-start">
@@ -89,13 +96,15 @@ export function PatientHeaderCard({
         </div>
 
         <div className="flex flex-wrap justify-center gap-2 lg:justify-end">
-          <Link
-            href={`/patients/${patient.id}/edit`}
-            className={cn(buttonVariants({ variant: 'outline' }), 'gap-1.5')}
-          >
-            <Pencil className="size-4" />
-            Edit Patient
-          </Link>
+          {!readOnly && (
+            <Link
+              href={`/patients/${patient.id}/edit`}
+              className={cn(buttonVariants({ variant: 'outline' }), 'gap-1.5')}
+            >
+              <Pencil className="size-4" />
+              Edit Patient
+            </Link>
+          )}
           <Button
             variant="outline"
             className="gap-1.5"

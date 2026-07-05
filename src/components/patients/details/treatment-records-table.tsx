@@ -73,13 +73,14 @@ export function TreatmentRecordsTable({ entries }: TreatmentRecordsTableProps) {
               <TableHead>Treatment</TableHead>
               <TableHead>Tooth / Branch</TableHead>
               <TableHead>Dentist</TableHead>
+              <TableHead>Clinic</TableHead>
               <TableHead>Cost</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {entries.length === 0 && (
-              <TableEmpty colSpan={6}>
+              <TableEmpty colSpan={7}>
                 No treatments have been logged yet.
               </TableEmpty>
             )}
@@ -96,6 +97,9 @@ export function TreatmentRecordsTable({ entries }: TreatmentRecordsTableProps) {
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">
                   {entry.dentist}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">
+                  {entry.clinicName}
                 </TableCell>
                 <TableCell className="whitespace-nowrap font-medium">
                   {formatCurrency(entry.cost)}
