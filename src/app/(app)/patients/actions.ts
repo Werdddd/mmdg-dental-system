@@ -29,6 +29,11 @@ import {
   createTreatmentRecord,
   type NewTreatmentRecordInput,
 } from '@/lib/data/treatment-records'
+import {
+  deletePatientDocument,
+  signPatientDocumentUrl,
+  uploadPatientDocument,
+} from '@/lib/data/patient-documents'
 import type { ClinicBranch } from '@/lib/dental/branches'
 
 export async function addPatientAction(
@@ -194,4 +199,74 @@ export async function deleteToothPhotoAction(
   const supabase = await createClient()
   await deleteToothPhoto(supabase, photoId)
   revalidatePath(`/patients/${patientId}`)
+}
+
+const MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
+const ALLOWED_DOCUMENT_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+])
+
+export async function uploadPatientDocumentAction(formData: FormData) {
+  const patientId = String(formData.get('patientId') ?? '')
+  const caption = String(formData.get('caption') ?? '').trim()
+  const file = formData.get('file')
+
+  if (!patientId || !(file instanceof File) || file.size === 0) {
+    throw new Error('A patient and a file are required.')
+  }
+  if (!caption) {
+    throw new Error('A caption or note is required.')
+  }
+  if (!ALLOWED_DOCUMENT_TYPES.has(file.type)) {
+    throw new Error('Unsupported file type.')
+  }
+  if (file.size > MAX_DOCUMENT_BYTES) {
+    throw new Error('File must be smaller than 20MB.')
+  }
+
+  const clinicId = await getActiveClinicId()
+  const supabase = await createClient()
+  const profile = await getCurrentProfile()
+
+  await uploadPatientDocument(
+    supabase,
+    clinicId,
+    patientId,
+    profile?.id,
+    caption,
+    file,
+  )
+  revalidatePath(`/patients/${patientId}`)
+}
+
+export async function deletePatientDocumentAction(
+  patientId: string,
+  documentId: string,
+) {
+  const supabase = await createClient()
+  await deletePatientDocument(supabase, documentId)
+  revalidatePath(`/patients/${patientId}`)
+}
+
+export async function getPatientDocumentUrlAction(
+  filePath: string,
+  downloadName?: string,
+): Promise<{ url?: string; error?: string }> {
+  try {
+    const supabase = await createClient()
+    const url = await signPatientDocumentUrl(supabase, filePath, downloadName)
+    return { url }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+  }
 }

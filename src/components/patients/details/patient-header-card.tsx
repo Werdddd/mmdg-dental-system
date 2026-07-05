@@ -24,16 +24,20 @@ import {
 import { cn } from '@/lib/utils'
 import type { PatientRow } from '@/components/patients/data'
 import type { PatientProfile } from '@/components/patients/details/data'
+import type { PatientDocumentRow } from '@/lib/data/patient-documents'
+import { PatientDocumentsPanel } from '@/components/patients/details/patient-documents-panel'
 
 interface PatientHeaderCardProps {
   patient: PatientRow
   profile: PatientProfile
+  documents: PatientDocumentRow[]
   readOnly?: boolean
 }
 
 export function PatientHeaderCard({
   patient,
   profile,
+  documents,
   readOnly = false,
 }: PatientHeaderCardProps) {
   const [documentsOpen, setDocumentsOpen] = useState(false)
@@ -124,16 +128,18 @@ export function PatientHeaderCard({
       </div>
 
       <Dialog open={documentsOpen} onOpenChange={setDocumentsOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Patient Documents</DialogTitle>
             <DialogDescription>
               Files and records uploaded for {patient.name}.
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-            No documents have been uploaded yet.
-          </div>
+          <PatientDocumentsPanel
+            patientId={patient.id}
+            documents={documents}
+            readOnly={readOnly}
+          />
         </DialogContent>
       </Dialog>
     </div>

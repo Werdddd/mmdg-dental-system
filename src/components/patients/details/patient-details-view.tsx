@@ -16,6 +16,7 @@ import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
 import type { PaymentRow } from '@/components/payments/data'
 import type { PatientMedicalHistoryRow } from '@/lib/data/patient-medical-history'
 import type { PatientConsentFormRow } from '@/lib/data/patient-consent-forms'
+import type { PatientDocumentRow } from '@/lib/data/patient-documents'
 import { getPatientProfile } from '@/components/patients/details/data'
 import { PatientHeaderCard } from '@/components/patients/details/patient-header-card'
 import { PatientAboutCard } from '@/components/patients/details/patient-about-card'
@@ -35,6 +36,7 @@ interface PatientDetailsViewProps {
   dentists: DentistOption[]
   treatmentRecords: TreatmentRecordRow[]
   payments: PaymentRow[]
+  documents: PatientDocumentRow[]
   medicalHistory: PatientMedicalHistoryRow | null
   consentForm: PatientConsentFormRow | null
 }
@@ -48,6 +50,7 @@ export function PatientDetailsView({
   dentists,
   treatmentRecords,
   payments,
+  documents,
   medicalHistory,
   consentForm,
 }: PatientDetailsViewProps) {
@@ -72,6 +75,7 @@ export function PatientDetailsView({
       <PatientHeaderCard
         patient={patient}
         profile={profile}
+        documents={documents}
         readOnly={isForeignPatient}
       />
 
