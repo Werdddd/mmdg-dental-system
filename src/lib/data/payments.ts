@@ -7,6 +7,7 @@ import type {
 } from '@/components/payments/data'
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, initialsOf } from '@/lib/utils'
+import { AppError } from '@/lib/errors'
 
 const PROOF_BUCKET = 'payment-proofs'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
@@ -193,11 +194,11 @@ export async function recordPayment(
 
   if (invoiceError) throw invoiceError
 
-  if (input.amount <= 0) {
-    throw new Error('Payment amount must be greater than zero.')
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    throw new AppError('Payment amount must be greater than zero.')
   }
   if (input.amount > Number(invoice.balance)) {
-    throw new Error('Payment amount exceeds the remaining balance.')
+    throw new AppError('Payment amount exceeds the remaining balance.')
   }
 
   const { data, error } = await supabase

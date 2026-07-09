@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentProfile } from '@/lib/auth/profile'
+import { AppError } from '@/lib/errors'
 
 export const ACTIVE_CLINIC_COOKIE = 'sa_active_clinic'
 
@@ -9,7 +10,7 @@ export async function getActiveClinicId(): Promise<string> {
   const profile = await getCurrentProfile()
 
   if (!profile) {
-    throw new Error('No authenticated profile found.')
+    throw new AppError('No authenticated profile found.')
   }
 
   // Admin / Dentist: their clinic is fixed by their profile

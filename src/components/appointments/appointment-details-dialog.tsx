@@ -157,8 +157,10 @@ function StatusUpdateDialog({ open, onOpenChange, current, allAppointments, onSa
 
       onSave(updated, newAppointment)
       onOpenChange(false)
-    } catch {
-      setSaveError('Could not save changes. Please try again.')
+    } catch (e) {
+      setSaveError(
+        e instanceof Error ? e.message : 'Could not save changes. Please try again.',
+      )
     } finally {
       setIsSaving(false)
     }

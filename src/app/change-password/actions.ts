@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { toActionErrorMessage } from '@/lib/errors'
 
 export interface ChangePasswordState {
   error: string | null
@@ -32,22 +33,22 @@ export async function changeForcedPassword(
     redirect('/login')
   }
 
-  const { error } = await supabase.auth.updateUser({ password })
-  if (error) {
-    return { error: error.message }
-  }
+  try {
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) throw error
 
-  // Self-service profile update — no self-update RLS policy exists, so this
-  // mirrors the pattern in settings/profile-actions.ts (admin client, but
-  // scoped to the caller's own id, not attacker-controlled).
-  const admin = createAdminClient()
-  const { error: profileError } = await admin
-    .from('profiles')
-    .update({ must_change_password: false })
-    .eq('id', user.id)
+    // Self-service profile update — no self-update RLS policy exists, so
+    // this mirrors the pattern in settings/profile-actions.ts (admin
+    // client, but scoped to the caller's own id, not attacker-controlled).
+    const admin = createAdminClient()
+    const { error: profileError } = await admin
+      .from('profiles')
+      .update({ must_change_password: false })
+      .eq('id', user.id)
 
-  if (profileError) {
-    return { error: profileError.message }
+    if (profileError) throw profileError
+  } catch (e) {
+    return { error: toActionErrorMessage(e) }
   }
 
   redirect('/dashboard')

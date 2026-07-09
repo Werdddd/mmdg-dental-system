@@ -39,6 +39,7 @@ import {
   type RadiographConsentInput,
 } from '@/lib/data/patient-radiograph-consents'
 import type { ClinicBranch } from '@/lib/dental/branches'
+import { AppError, toActionErrorMessage } from '@/lib/errors'
 
 export async function addPatientAction(
   input: NewPatientInput,
@@ -166,13 +167,13 @@ export async function uploadToothPhotoAction(formData: FormData) {
   const file = formData.get('file')
 
   if (!patientId || !(file instanceof File) || file.size === 0) {
-    throw new Error('A patient and an image file are required.')
+    throw new AppError('A patient and an image file are required.')
   }
   if (!file.type.startsWith('image/')) {
-    throw new Error('Only image files can be uploaded.')
+    throw new AppError('Only image files can be uploaded.')
   }
   if (file.size > MAX_PHOTO_BYTES) {
-    throw new Error('Image must be smaller than 8MB.')
+    throw new AppError('Image must be smaller than 8MB.')
   }
 
   const tooth =
@@ -226,16 +227,16 @@ export async function uploadPatientDocumentAction(formData: FormData) {
   const file = formData.get('file')
 
   if (!patientId || !(file instanceof File) || file.size === 0) {
-    throw new Error('A patient and a file are required.')
+    throw new AppError('A patient and a file are required.')
   }
   if (!caption) {
-    throw new Error('A caption or note is required.')
+    throw new AppError('A caption or note is required.')
   }
   if (!ALLOWED_DOCUMENT_TYPES.has(file.type)) {
-    throw new Error('Unsupported file type.')
+    throw new AppError('Unsupported file type.')
   }
   if (file.size > MAX_DOCUMENT_BYTES) {
-    throw new Error('File must be smaller than 20MB.')
+    throw new AppError('File must be smaller than 20MB.')
   }
 
   const clinicId = await getActiveClinicId()
@@ -288,6 +289,6 @@ export async function getPatientDocumentUrlAction(
     const url = await signPatientDocumentUrl(supabase, filePath, downloadName)
     return { url }
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }

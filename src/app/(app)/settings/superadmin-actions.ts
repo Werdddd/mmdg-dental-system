@@ -5,12 +5,13 @@ import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentProfile } from '@/lib/auth/profile'
 import { defaultPassword } from '@/lib/auth/default-password'
+import { AppError, toActionErrorMessage } from '@/lib/errors'
 
 type ActionResult = { error?: string }
 
 async function assertSuperAdmin() {
   const profile = await getCurrentProfile()
-  if (profile?.role !== 'superadmin') throw new Error('Unauthorized')
+  if (profile?.role !== 'superadmin') throw new AppError('Unauthorized')
   return profile
 }
 
@@ -33,11 +34,11 @@ export async function addSuperAdminAction(
         must_change_password: true,
       },
     })
-    if (error) return { error: error.message }
+    if (error) throw error
     revalidatePath('/settings')
     return {}
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }
 
@@ -46,14 +47,15 @@ export async function removeSuperAdminAction(
 ): Promise<ActionResult> {
   try {
     const profile = await assertSuperAdmin()
-    if (profile.id === id)
-      return { error: 'You cannot remove your own access.' }
+    if (profile.id === id) {
+      throw new AppError('You cannot remove your own access.')
+    }
     const admin = createAdminClient()
     const { error } = await admin.auth.admin.deleteUser(id)
-    if (error) return { error: error.message }
+    if (error) throw error
     revalidatePath('/settings')
     return {}
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }

@@ -1,9 +1,11 @@
-import type {
-  AppointmentRow,
-  AppointmentStatus,
+import {
+  VALID_TRANSITIONS,
+  type AppointmentRow,
+  type AppointmentStatus,
 } from '@/components/appointments/data'
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, formatDisplayTime, initialsOf } from '@/lib/utils'
+import { AppError } from '@/lib/errors'
 
 export interface PatientAppointmentData {
   id: string
@@ -188,12 +190,49 @@ export interface NewAppointmentInput {
   notes: string // treatment plan / treatment done
 }
 
+// Appointments in these statuses genuinely occupy the slot. Cancelled/No
+// Show/Rescheduled appointments have freed it up for rebooking.
+const BLOCKING_APPOINTMENT_STATUSES: AppointmentStatus[] = [
+  'Scheduled',
+  'In Progress',
+  'Completed',
+]
+
+const DOUBLE_BOOKING_MESSAGE =
+  'This dentist already has an appointment booked at that date and time.'
+
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: string }).code === '23505'
+  )
+}
+
 export async function createAppointment(
   supabase: SupabaseServerClient,
   clinicId: string,
   input: NewAppointmentInput,
 ): Promise<AppointmentRow & { isFirstAppointment: boolean }> {
   const scheduledAt = new Date(`${input.date}T${input.time}`).toISOString()
+
+  // Friendly pre-check. The unique partial index (migration 0023) is the
+  // real guarantee against a race between two concurrent bookings for the
+  // same slot — this just avoids a raw constraint-violation error in the
+  // common case.
+  const { data: conflicting, error: conflictError } = await supabase
+    .from('appointments')
+    .select('id')
+    .eq('dentist_id', input.dentistId)
+    .eq('scheduled_at', scheduledAt)
+    .in('status', BLOCKING_APPOINTMENT_STATUSES)
+    .limit(1)
+
+  if (conflictError) throw conflictError
+  if (conflicting && conflicting.length > 0) {
+    throw new AppError(DOUBLE_BOOKING_MESSAGE)
+  }
 
   const { data, error } = await supabase
     .from('appointments')
@@ -209,7 +248,12 @@ export async function createAppointment(
     .select(SELECT)
     .single()
 
-  if (error) throw error
+  if (error) {
+    if (isUniqueViolation(error)) {
+      throw new AppError(DOUBLE_BOOKING_MESSAGE)
+    }
+    throw error
+  }
 
   // Counted across all clinics (not just this one) since a patient's
   // appointment history is shared across MMDG's clinics — see
@@ -233,6 +277,24 @@ export async function updateAppointmentStatus(
   status: AppointmentStatus,
   notes?: string,
 ): Promise<void> {
+  const { data: current, error: fetchError } = await supabase
+    .from('appointments')
+    .select('status')
+    .eq('id', appointmentId)
+    .single()
+
+  if (fetchError) throw fetchError
+
+  const currentStatus = current.status as AppointmentStatus
+  if (
+    currentStatus !== status &&
+    !VALID_TRANSITIONS[currentStatus].includes(status)
+  ) {
+    throw new AppError(
+      `An appointment can't move from "${currentStatus}" to "${status}".`,
+    )
+  }
+
   const updateData: Record<string, unknown> = { status }
   if (notes !== undefined) {
     updateData.notes = notes || null

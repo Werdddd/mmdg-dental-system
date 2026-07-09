@@ -105,8 +105,10 @@ export function AddAppointmentDialog({
 
       resetForm()
       onOpenChange(false)
-    } catch {
-      setError('Could not add appointment. Please try again.')
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : 'Could not add appointment. Please try again.',
+      )
     } finally {
       setIsSubmitting(false)
     }

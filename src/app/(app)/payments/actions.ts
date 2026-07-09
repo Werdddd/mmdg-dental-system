@@ -10,6 +10,7 @@ import {
   type NewPaymentInput,
 } from '@/lib/data/payments'
 import type { PaymentMethod } from '@/components/payments/data'
+import { AppError } from '@/lib/errors'
 
 const MAX_PROOF_PHOTO_BYTES = 8 * 1024 * 1024
 
@@ -21,10 +22,10 @@ export async function recordPaymentAction(formData: FormData) {
   let proofPhotoPath: string | null = null
   if (proofFile instanceof File && proofFile.size > 0) {
     if (!proofFile.type.startsWith('image/')) {
-      throw new Error('Proof of payment must be an image file.')
+      throw new AppError('Proof of payment must be an image file.')
     }
     if (proofFile.size > MAX_PROOF_PHOTO_BYTES) {
-      throw new Error('Proof of payment image must be smaller than 8MB.')
+      throw new AppError('Proof of payment image must be smaller than 8MB.')
     }
     proofPhotoPath = await uploadPaymentProof(supabase, clinicId, proofFile)
   }

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentProfile } from '@/lib/auth/profile'
+import { AppError, toActionErrorMessage } from '@/lib/errors'
 import {
   createDocumentFolder,
   deleteDocument,
@@ -34,7 +35,7 @@ const ALLOWED_TYPES = new Set([
 async function assertAdmin() {
   const profile = await getCurrentProfile()
   if (profile?.role !== 'superadmin' && profile?.role !== 'admin') {
-    throw new Error('Unauthorized')
+    throw new AppError('Unauthorized')
   }
   return profile
 }
@@ -43,13 +44,13 @@ export async function createFolderAction(name: string): Promise<ActionResult> {
   try {
     const profile = await assertAdmin()
     const trimmed = name.trim()
-    if (!trimmed) return { error: 'Folder name is required.' }
+    if (!trimmed) throw new AppError('Folder name is required.')
     const supabase = await createClient()
     await createDocumentFolder(supabase, trimmed, profile?.id)
     revalidatePath('/documents')
     return {}
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }
 
@@ -60,14 +61,14 @@ export async function renameFolderAction(
   try {
     await assertAdmin()
     const trimmed = name.trim()
-    if (!trimmed) return { error: 'Folder name is required.' }
+    if (!trimmed) throw new AppError('Folder name is required.')
     const supabase = await createClient()
     await renameDocumentFolder(supabase, folderId, trimmed)
     revalidatePath('/documents')
     revalidatePath(`/documents/${folderId}`)
     return {}
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }
 
@@ -82,7 +83,7 @@ export async function deleteFolderAction(
     revalidatePath('/documents')
     return {}
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }
 
@@ -95,13 +96,13 @@ export async function uploadDocumentAction(
     const file = formData.get('file')
 
     if (!folderId || !(file instanceof File) || file.size === 0) {
-      return { error: 'A folder and a file are required.' }
+      throw new AppError('A folder and a file are required.')
     }
     if (!ALLOWED_TYPES.has(file.type)) {
-      return { error: 'Unsupported file type.' }
+      throw new AppError('Unsupported file type.')
     }
     if (file.size > MAX_DOCUMENT_BYTES) {
-      return { error: 'File must be smaller than 20MB.' }
+      throw new AppError('File must be smaller than 20MB.')
     }
 
     const supabase = await createClient()
@@ -109,7 +110,7 @@ export async function uploadDocumentAction(
     revalidatePath(`/documents/${folderId}`)
     return {}
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }
 
@@ -124,7 +125,7 @@ export async function deleteDocumentAction(
     revalidatePath(`/documents/${folderId}`)
     return {}
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }
 
@@ -134,11 +135,11 @@ export async function getDocumentUrlAction(
 ): Promise<{ url?: string; error?: string }> {
   try {
     const profile = await getCurrentProfile()
-    if (!profile) return { error: 'Unauthorized' }
+    if (!profile) throw new AppError('Unauthorized')
     const supabase = await createClient()
     const url = await signDocumentUrl(supabase, filePath, downloadName)
     return { url }
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }

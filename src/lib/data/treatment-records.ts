@@ -1,6 +1,13 @@
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate } from '@/lib/utils'
 import type { ClinicBranch } from '@/lib/dental/branches'
+import { AppError } from '@/lib/errors'
+
+function assertValidCost(cost: number) {
+  if (!Number.isFinite(cost) || cost < 0) {
+    throw new AppError('Treatment cost must be a positive number.')
+  }
+}
 
 export type TreatmentRecordStatus = 'Pending' | 'Invoiced' | 'Void'
 
@@ -110,6 +117,8 @@ export async function createTreatmentRecord(
   clinicId: string,
   input: NewTreatmentRecordInput,
 ): Promise<TreatmentRecordRow> {
+  assertValidCost(input.cost)
+
   const { data, error } = await supabase
     .from('treatment_records')
     .insert({
@@ -142,6 +151,8 @@ export async function createTreatmentRecordForTooth(
   clinicId: string,
   input: ToothTreatmentRecordInput,
 ): Promise<void> {
+  assertValidCost(input.cost)
+
   const { error } = await supabase.from('treatment_records').insert({
     clinic_id: clinicId,
     patient_id: input.patientId,

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { AppError, toActionErrorMessage } from '@/lib/errors'
 
 type ActionResult = { error?: string; success?: boolean }
 
@@ -17,7 +18,7 @@ export async function updateProfileAction(
     const {
       data: { user },
     } = await supabase.auth.getUser()
-    if (!user) return { error: 'Not authenticated' }
+    if (!user) throw new AppError('Not authenticated')
 
     const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
     const admin = createAdminClient()
@@ -29,11 +30,11 @@ export async function updateProfileAction(
       })
       .eq('id', user.id)
 
-    if (error) return { error: error.message }
+    if (error) throw error
     revalidatePath('/settings')
     return { success: true }
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }
 
@@ -49,9 +50,9 @@ export async function changePasswordAction(
   try {
     const supabase = await createClient()
     const { error } = await supabase.auth.updateUser({ password: newPassword })
-    if (error) return { error: error.message }
+    if (error) throw error
     return { success: true }
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Unexpected error' }
+    return { error: toActionErrorMessage(e) }
   }
 }

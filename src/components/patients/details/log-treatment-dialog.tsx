@@ -81,8 +81,10 @@ export function LogTreatmentDialog({
       resetForm()
       onOpenChange(false)
       router.refresh()
-    } catch {
-      setError('Could not log this treatment. Please try again.')
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : 'Could not log this treatment. Please try again.',
+      )
     } finally {
       setIsSubmitting(false)
     }

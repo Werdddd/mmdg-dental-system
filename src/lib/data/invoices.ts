@@ -1,6 +1,7 @@
 import type { InvoiceRow, InvoiceStatus } from '@/components/invoices/data'
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, initialsOf } from '@/lib/utils'
+import { AppError } from '@/lib/errors'
 
 interface InvoiceQueryRow {
   id: string
@@ -97,54 +98,35 @@ export async function generateInvoice(
   input: GenerateInvoiceInput,
 ): Promise<InvoiceRow> {
   if (input.treatmentRecordIds.length === 0) {
-    throw new Error('Select at least one treatment to invoice.')
+    throw new AppError('Select at least one treatment to invoice.')
   }
 
-  const { data: treatmentRecords, error: treatmentError } = await supabase
-    .from('treatment_records')
-    .select('id, treatment, cost')
-    .eq('clinic_id', clinicId)
-    .eq('patient_id', input.patientId)
-    .eq('status', 'Pending')
-    .in('id', input.treatmentRecordIds)
-
-  if (treatmentError) throw treatmentError
-  if (!treatmentRecords || treatmentRecords.length !== input.treatmentRecordIds.length) {
-    throw new Error(
-      'One or more selected treatments are no longer available to invoice.',
-    )
-  }
-
-  const { data: invoice, error: invoiceError } = await supabase
-    .from('invoices')
-    .insert({
-      clinic_id: clinicId,
-      patient_id: input.patientId,
-      due_date: input.dueDate,
-    })
-    .select('id')
-    .single()
-
-  if (invoiceError) throw invoiceError
-
-  const { error: itemsError } = await supabase.from('invoice_items').insert(
-    treatmentRecords.map((record) => ({
-      clinic_id: clinicId,
-      invoice_id: invoice.id,
-      treatment_record_id: record.id,
-      description: record.treatment,
-      quantity: 1,
-      unit_price: record.cost,
-      amount: record.cost,
-    })),
+  // Runs as a single DB transaction (see migration 0024) so a failure
+  // partway through can't leave a $0 invoice with no line items behind.
+  const { data: invoiceId, error: rpcError } = await supabase.rpc(
+    'generate_invoice',
+    {
+      p_clinic_id: clinicId,
+      p_patient_id: input.patientId,
+      p_treatment_record_ids: input.treatmentRecordIds,
+      p_due_date: input.dueDate,
+    },
   )
 
-  if (itemsError) throw itemsError
+  if (rpcError) {
+    // P0001 = the plain `raise exception '...'` messages the function
+    // raises itself — those are safe, intentional, user-facing text.
+    // Anything else is an unexpected DB error.
+    if (rpcError.code === 'P0001') {
+      throw new AppError(rpcError.message)
+    }
+    throw rpcError
+  }
 
   const { data, error } = await supabase
     .from('invoices')
     .select(SELECT)
-    .eq('id', invoice.id)
+    .eq('id', invoiceId)
     .single()
 
   if (error) throw error

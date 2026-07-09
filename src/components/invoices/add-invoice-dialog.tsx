@@ -92,8 +92,10 @@ export function AddInvoiceDialog({
       resetForm()
       onOpenChange(false)
       router.refresh()
-    } catch {
-      setError('Could not generate invoice. Please try again.')
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : 'Could not generate invoice. Please try again.',
+      )
     } finally {
       setIsSubmitting(false)
     }
