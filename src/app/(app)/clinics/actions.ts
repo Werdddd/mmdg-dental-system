@@ -89,7 +89,12 @@ export async function addStaffAction(
       email,
       password: defaultPassword(firstName.trim(), lastName.trim()),
       email_confirm: true,
-      user_metadata: { full_name: fullName, role, clinic_id: clinicId },
+      user_metadata: {
+        full_name: fullName,
+        role,
+        clinic_id: clinicId,
+        must_change_password: true,
+      },
     })
     if (error) return { error: error.message }
     revalidatePath('/clinics')

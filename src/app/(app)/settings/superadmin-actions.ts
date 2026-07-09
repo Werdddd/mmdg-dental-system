@@ -27,7 +27,11 @@ export async function addSuperAdminAction(
       email,
       password: defaultPassword(firstName.trim(), lastName.trim()),
       email_confirm: true,
-      user_metadata: { full_name: fullName, role: 'superadmin' },
+      user_metadata: {
+        full_name: fullName,
+        role: 'superadmin',
+        must_change_password: true,
+      },
     })
     if (error) return { error: error.message }
     revalidatePath('/settings')

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { redirect } from 'next/navigation'
 
 import { getCurrentProfile } from '@/lib/auth/profile'
 import { createClient } from '@/lib/supabase/server'
@@ -17,6 +18,11 @@ export default async function AppGroupLayout({
   children: ReactNode
 }) {
   const profile = await getCurrentProfile()
+
+  if (profile?.must_change_password) {
+    redirect('/change-password')
+  }
+
   const isSuperAdmin = profile?.role === 'superadmin'
 
   const supabase = await createClient()
