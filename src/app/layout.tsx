@@ -6,7 +6,8 @@ export const metadata: Metadata = {
   title: 'MMDG Dental System',
   description: 'Mendez Multispecialty Dental Group',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/mmdg-icon.png',
+    apple: '/mmdg-icon.png',
   },
 }
 
