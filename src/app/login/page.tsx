@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import { LoginForm } from '@/components/login-form'
-import heroImage from '../../../public/signin-hero1.png'
 import logoImage from '../../../public/mmdg icon.png'
 
 export default function LoginPage() {
@@ -23,14 +22,27 @@ export default function LoginPage() {
         <div className="pointer-events-none absolute top-1/3 -right-24 h-96 w-96 rounded-full bg-purple-300/15 blur-3xl" />
         <div className="pointer-events-none absolute bottom-32 left-1/3 h-72 w-72 rounded-full bg-indigo-400/20 blur-3xl" />
 
-        {/* Upper content */}
-        <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-14 pb-4 pt-16 text-center">
+        {/* Content */}
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-14 py-16 text-center">
           {/* Trust badge */}
-          <div className="mb-8 flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-sm">
+          <div className="mb-10 flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             <span className="text-xs font-medium tracking-wide text-white/90">
               Trusted by 10,000+ patients
             </span>
+          </div>
+
+          {/* Logo emblem */}
+          <div className="relative mb-10">
+            <div className="absolute inset-0 -z-10 scale-125 rounded-full bg-white/25 blur-2xl" />
+            <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white shadow-2xl shadow-black/30 ring-4 ring-white/25">
+              <Image
+                src={logoImage}
+                alt="MMDG Dental Group"
+                priority
+                className="h-24 w-24 object-contain"
+              />
+            </div>
           </div>
 
           <h2 className="text-5xl font-extrabold leading-[1.1] tracking-tight text-white">
@@ -57,26 +69,6 @@ export default function LoginPage() {
               ),
             )}
           </div>
-        </div>
-
-        {/* Hero image — negative margin-top eats the PNG's built-in top whitespace */}
-        <div
-          className="relative z-10 flex w-full shrink-0 justify-center overflow-hidden"
-          style={{ maxHeight: '42vh', marginTop: '-60px' }}
-        >
-          <Image
-            src={heroImage}
-            alt="Dental professionals"
-            priority
-            style={{
-              width: 'auto',
-              height: '100%',
-              maxHeight: '42vh',
-              display: 'block',
-              objectFit: 'contain',
-              objectPosition: 'bottom',
-            }}
-          />
         </div>
       </div>
 
