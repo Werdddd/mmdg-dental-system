@@ -14,6 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { formatCurrency } from '@/lib/utils'
 import type {
@@ -36,6 +42,7 @@ interface TreatmentRecordsTableProps {
 
 export function TreatmentRecordsTable({ entries }: TreatmentRecordsTableProps) {
   const [showInvoiceHint, setShowInvoiceHint] = useState(false)
+  const [selected, setSelected] = useState<TreatmentRecordRow | null>(null)
   const pendingCount = entries.filter((e) => e.status === 'Pending').length
 
   return (
@@ -85,7 +92,11 @@ export function TreatmentRecordsTable({ entries }: TreatmentRecordsTableProps) {
               </TableEmpty>
             )}
             {entries.map((entry) => (
-              <TableRow key={entry.id}>
+              <TableRow
+                key={entry.id}
+                className="cursor-pointer"
+                onClick={() => setSelected(entry)}
+              >
                 <TableCell className="whitespace-nowrap text-muted-foreground">
                   {entry.performedAt}
                 </TableCell>
@@ -112,6 +123,56 @@ export function TreatmentRecordsTable({ entries }: TreatmentRecordsTableProps) {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog
+        open={selected !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelected(null)
+        }}
+      >
+        <DialogContent>
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selected.treatment}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-y-2">
+                  <span className="text-muted-foreground">Date</span>
+                  <span>{selected.performedAt}</span>
+                  <span className="text-muted-foreground">Tooth / Branch</span>
+                  <span>
+                    {selected.tooth
+                      ? `Tooth #${selected.tooth}`
+                      : selected.branch ?? '—'}
+                  </span>
+                  <span className="text-muted-foreground">Dentist</span>
+                  <span>{selected.dentist}</span>
+                  <span className="text-muted-foreground">Clinic</span>
+                  <span>{selected.clinicName}</span>
+                  <span className="text-muted-foreground">Cost</span>
+                  <span className="font-medium">
+                    {formatCurrency(selected.cost)}
+                  </span>
+                  <span className="text-muted-foreground">Status</span>
+                  <span>
+                    <StatusBadge
+                      status={selected.status}
+                      variants={STATUS_VARIANT}
+                    />
+                  </span>
+                </div>
+                <div className="space-y-1 border-t pt-3">
+                  <p className="font-medium">Notes</p>
+                  <p className="whitespace-pre-wrap text-muted-foreground">
+                    {selected.notes || 'No notes recorded for this treatment.'}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
