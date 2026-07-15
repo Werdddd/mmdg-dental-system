@@ -24,7 +24,7 @@ interface PatientsViewProps {
 
 export function PatientsView({ initialPatients }: PatientsViewProps) {
   const router = useRouter()
-  const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
+  const { clinics, activeClinicId } = useClinicContext()
   const [patients] = useState<PatientRow[]>(initialPatients)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<PatientsSortOption>('Recent')
@@ -87,7 +87,7 @@ export function PatientsView({ initialPatients }: PatientsViewProps) {
             <h1 className="text-2xl font-semibold tracking-tight">Patients</h1>
             <Badge variant="purple">{patients.length} total patients</Badge>
           </div>
-          {isSuperAdmin && activeClinicId && clinics.length > 0 && (
+          {activeClinicId && clinics.length > 1 && (
             <ClinicSelector clinics={clinics} activeClinicId={activeClinicId} />
           )}
         </div>

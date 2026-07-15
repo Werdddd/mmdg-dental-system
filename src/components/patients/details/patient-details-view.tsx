@@ -59,11 +59,12 @@ export function PatientDetailsView({
   radiographConsent,
 }: PatientDetailsViewProps) {
   const profile = getPatientProfile(patient)
-  const { activeClinicId, isSuperAdmin } = useClinicContext()
-  // A visiting clinic (not the patient's home clinic) gets a read-only
-  // chart — only Log Treatment stays writable for them. SuperAdmin is
-  // never treated as "foreign" since their RLS access isn't clinic-scoped.
-  const isForeignPatient = !isSuperAdmin && patient.clinicId !== activeClinicId
+  const { clinics, isSuperAdmin } = useClinicContext()
+  // A patient outside every clinic this staff member belongs to gets a
+  // read-only chart — only Log Treatment stays writable for them. SuperAdmin
+  // is never treated as "foreign" since their RLS access isn't clinic-scoped.
+  const isForeignPatient =
+    !isSuperAdmin && !clinics.some((c) => c.id === patient.clinicId)
 
   return (
     <>

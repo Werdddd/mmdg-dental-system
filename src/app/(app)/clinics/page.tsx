@@ -20,9 +20,9 @@ export default async function ClinicsPage() {
 
   const staffCountByClinic: Record<string, number> = {}
   for (const user of staff) {
-    if (!user.clinicId) continue
-    staffCountByClinic[user.clinicId] =
-      (staffCountByClinic[user.clinicId] ?? 0) + 1
+    for (const clinicId of user.clinicIds) {
+      staffCountByClinic[clinicId] = (staffCountByClinic[clinicId] ?? 0) + 1
+    }
   }
 
   return (

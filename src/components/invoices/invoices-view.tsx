@@ -30,7 +30,7 @@ export function InvoicesView({
   patients,
   pendingTreatments,
 }: InvoicesViewProps) {
-  const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
+  const { clinics, activeClinicId } = useClinicContext()
   const [invoices, setInvoices] = useState<InvoiceRow[]>(initialInvoices)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<InvoicesSortOption>('Recent')
@@ -103,7 +103,7 @@ export function InvoicesView({
             <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
             <Badge variant="purple">{invoices.length} total invoices</Badge>
           </div>
-          {isSuperAdmin && activeClinicId && clinics.length > 0 && (
+          {activeClinicId && clinics.length > 1 && (
             <ClinicSelector clinics={clinics} activeClinicId={activeClinicId} />
           )}
         </div>

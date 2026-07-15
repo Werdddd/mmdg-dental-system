@@ -31,7 +31,7 @@ export function AppointmentsView({
   patients,
   dentists,
 }: AppointmentsViewProps) {
-  const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
+  const { clinics, activeClinicId } = useClinicContext()
   const [appointments, setAppointments] =
     useState<AppointmentRow[]>(initialAppointments)
   const [search, setSearch] = useState('')
@@ -117,7 +117,7 @@ export function AppointmentsView({
               {appointments.length} total appointments
             </Badge>
           </div>
-          {isSuperAdmin && activeClinicId && clinics.length > 0 && (
+          {activeClinicId && clinics.length > 1 && (
             <ClinicSelector clinics={clinics} activeClinicId={activeClinicId} />
           )}
         </div>

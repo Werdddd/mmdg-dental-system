@@ -13,17 +13,42 @@ export async function getActiveClinicId(): Promise<string> {
     throw new AppError('No authenticated profile found.')
   }
 
-  // Admin / Dentist: their clinic is fixed by their profile
-  if (profile.clinic_id) {
-    return profile.clinic_id
-  }
-
-  // SuperAdmin: check for a cookie-persisted selection
+  const supabase = await createClient()
   const cookieStore = await cookies()
   const cookieClinicId = cookieStore.get(ACTIVE_CLINIC_COOKIE)?.value
 
-  const supabase = await createClient()
+  if (profile.role !== 'superadmin') {
+    // Clinic staff: scoped to whichever clinic(s) they're a member of.
+    const { data: memberships, error: membershipError } = await supabase
+      .from('clinic_staff')
+      .select('clinic_id')
+      .eq('profile_id', profile.id)
+    if (membershipError) throw membershipError
+    if (!memberships?.length) {
+      throw new AppError('No clinic assigned to this account.')
+    }
 
+    const clinicIds = memberships.map((m) => m.clinic_id)
+    if (cookieClinicId && clinicIds.includes(cookieClinicId)) {
+      return cookieClinicId
+    }
+    if (clinicIds.length === 1) {
+      return clinicIds[0]
+    }
+
+    // 2+ memberships, no valid cookie: default to the earliest-created clinic.
+    const { data: earliest, error: earliestError } = await supabase
+      .from('clinics')
+      .select('id')
+      .in('id', clinicIds)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single()
+    if (earliestError) throw earliestError
+    return earliest.id
+  }
+
+  // SuperAdmin: check for a cookie-persisted selection
   if (cookieClinicId) {
     const { data } = await supabase
       .from('clinics')

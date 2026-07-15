@@ -17,6 +17,27 @@ export async function getClinics(
   return data ?? []
 }
 
+export async function getClinicsForProfile(
+  supabase: SupabaseServerClient,
+  profileId: string,
+): Promise<ClinicRecord[]> {
+  const { data: memberships, error: membershipError } = await supabase
+    .from('clinic_staff')
+    .select('clinic_id')
+    .eq('profile_id', profileId)
+  if (membershipError) throw membershipError
+  if (!memberships?.length) return []
+
+  const clinicIds = memberships.map((m) => m.clinic_id)
+  const { data, error } = await supabase
+    .from('clinics')
+    .select('id, name, address')
+    .in('id', clinicIds)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
 export interface ClinicDetail extends ClinicRecord {
   createdAt: string
 }

@@ -5,8 +5,8 @@ import { ArrowLeft } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/server'
-import { getActiveClinicId } from '@/lib/data/clinic'
 import { getCurrentProfile } from '@/lib/auth/profile'
+import { getClinicsForProfile } from '@/lib/data/clinics'
 import { getPatientById, getPatientIntakeExtras } from '@/lib/data/patients'
 import { PatientIntakeForm } from '@/components/patients/intake/patient-intake-form'
 import { patientToIntakeFormValues } from '@/components/patients/intake/types'
@@ -18,18 +18,20 @@ export default async function EditPatientPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
-  const clinicId = await getActiveClinicId()
 
   const patient = await getPatientById(supabase, id)
   if (!patient) notFound()
 
-  // Only the patient's home clinic can edit their profile — visiting
-  // clinics get a read-only chart on the detail page. RLS already blocks
-  // the actual write; this just avoids showing an edit form that would
-  // fail on submit.
+  // Only a clinic this staff member belongs to can edit the patient's
+  // profile — other clinics get a read-only chart on the detail page. RLS
+  // already blocks the actual write; this just avoids showing an edit form
+  // that would fail on submit.
   const profile = await getCurrentProfile()
-  if (profile?.role !== 'superadmin' && patient.clinicId !== clinicId) {
-    redirect(`/patients/${id}`)
+  if (profile && profile.role !== 'superadmin') {
+    const clinics = await getClinicsForProfile(supabase, profile.id)
+    if (!clinics.some((c) => c.id === patient.clinicId)) {
+      redirect(`/patients/${id}`)
+    }
   }
 
   const { medicalHistory, consentForm } = await getPatientIntakeExtras(

@@ -12,11 +12,21 @@ export async function getDentists(
   supabase: SupabaseServerClient,
   clinicId: string,
 ): Promise<DentistOption[]> {
+  const { data: memberships, error: membershipError } = await supabase
+    .from('clinic_staff')
+    .select('profile_id')
+    .eq('clinic_id', clinicId)
+  if (membershipError) throw membershipError
+  if (!memberships?.length) return []
+
   const { data, error } = await supabase
     .from('profiles')
     .select('id, full_name, specialty')
     .eq('role', 'dentist')
-    .eq('clinic_id', clinicId)
+    .in(
+      'id',
+      memberships.map((m) => m.profile_id),
+    )
     .order('full_name')
 
   if (error) throw error

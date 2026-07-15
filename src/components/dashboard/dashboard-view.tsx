@@ -81,7 +81,7 @@ export function DashboardView({
   pendingTreatments,
   profileName,
 }: DashboardViewProps) {
-  const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
+  const { clinics, activeClinicId } = useClinicContext()
   const router = useRouter()
 
   // Dialog states
@@ -136,7 +136,7 @@ export function DashboardView({
               Here&apos;s what&apos;s happening at your clinic today.
             </p>
           </div>
-          {isSuperAdmin && activeClinicId && clinics.length > 0 && (
+          {activeClinicId && clinics.length > 1 && (
             <ClinicSelector clinics={clinics} activeClinicId={activeClinicId} />
           )}
         </div>

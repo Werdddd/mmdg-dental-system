@@ -27,7 +27,7 @@ export function PaymentsView({
   initialPayments,
   invoicesWithBalance,
 }: PaymentsViewProps) {
-  const { clinics, activeClinicId, isSuperAdmin } = useClinicContext()
+  const { clinics, activeClinicId } = useClinicContext()
   const [payments, setPayments] = useState<PaymentRow[]>(initialPayments)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<PaymentsSortOption>('Recent')
@@ -96,7 +96,7 @@ export function PaymentsView({
             <h1 className="text-2xl font-semibold tracking-tight">Payments</h1>
             <Badge variant="purple">{payments.length} total payments</Badge>
           </div>
-          {isSuperAdmin && activeClinicId && clinics.length > 0 && (
+          {activeClinicId && clinics.length > 1 && (
             <ClinicSelector clinics={clinics} activeClinicId={activeClinicId} />
           )}
         </div>

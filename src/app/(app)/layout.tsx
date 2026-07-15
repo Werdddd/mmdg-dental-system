@@ -3,7 +3,11 @@ import { redirect } from 'next/navigation'
 
 import { getCurrentProfile } from '@/lib/auth/profile'
 import { createClient } from '@/lib/supabase/server'
-import { getClinics, type ClinicRecord } from '@/lib/data/clinics'
+import {
+  getClinics,
+  getClinicsForProfile,
+  type ClinicRecord,
+} from '@/lib/data/clinics'
 import { getActiveClinicId } from '@/lib/data/clinic'
 import {
   getTodayAppointments,
@@ -43,7 +47,8 @@ export default async function AppGroupLayout({
         getUpcomingReminders(supabase, clinicId),
       ])
     } else {
-      ;[todayAppointments, reminderAppointments] = await Promise.all([
+      ;[clinics, todayAppointments, reminderAppointments] = await Promise.all([
+        profile ? getClinicsForProfile(supabase, profile.id) : Promise.resolve([]),
         getTodayAppointments(supabase, clinicId),
         getUpcomingReminders(supabase, clinicId),
       ])

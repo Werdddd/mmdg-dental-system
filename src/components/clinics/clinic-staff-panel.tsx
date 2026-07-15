@@ -41,20 +41,13 @@ import {
 import { Pagination } from '@/components/shared/pagination'
 import type { StaffUser } from '@/lib/data/staff'
 import type { UserRole } from '@/lib/auth/types'
+import { ROLE_LABELS } from '@/lib/auth/role-labels'
 import { formatDisplayDate } from '@/lib/utils'
 import {
   addStaffAction,
   removeStaffAction,
   updateStaffProfileAction,
 } from '@/app/(app)/clinics/actions'
-
-export const ROLE_LABELS: Record<UserRole, string> = {
-  superadmin: 'SuperAdmin',
-  admin: 'Admin',
-  dentist: 'Dentist',
-  receptionist: 'Receptionist',
-  dental_assistant: 'Dental Assistant',
-}
 
 const INVITE_ROLES: Extract<
   UserRole,
@@ -99,6 +92,7 @@ export function ClinicStaffPanel({
   const [inviteRole, setInviteRole] =
     useState<(typeof INVITE_ROLES)[number]>('dentist')
   const [inviteError, setInviteError] = useState<string | null>(null)
+  const [inviteInfo, setInviteInfo] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -135,12 +129,17 @@ export function ClinicStaffPanel({
     })
   }
 
-  function resetInviteForm() {
+  function clearInviteFields() {
     setInviteEmail('')
     setInviteFirstName('')
     setInviteLastName('')
     setInviteRole('dentist')
+  }
+
+  function resetInviteForm() {
+    clearInviteFields()
     setInviteError(null)
+    setInviteInfo(null)
   }
 
   function handleInvite() {
@@ -151,6 +150,7 @@ export function ClinicStaffPanel({
     )
       return
     setInviteError(null)
+    setInviteInfo(null)
     startTransition(async () => {
       const result = await addStaffAction(
         inviteEmail.trim(),
@@ -163,9 +163,16 @@ export function ClinicStaffPanel({
         setInviteError(result.error)
         return
       }
+      router.refresh()
+      if (result.info) {
+        // Existing account linked to this clinic — keep the dialog open so
+        // they can read the confirmation instead of a native alert() popup.
+        clearInviteFields()
+        setInviteInfo(result.info)
+        return
+      }
       resetInviteForm()
       setOpen(false)
-      router.refresh()
     })
   }
 
@@ -219,7 +226,9 @@ export function ClinicStaffPanel({
                 <DialogDescription>
                   The account is created immediately. The staff member can use
                   &ldquo;Forgot Password&rdquo; on the login page to set their
-                  password and sign in — no email acceptance needed.
+                  password and sign in — no email acceptance needed. If this
+                  email is already registered at another clinic, they&rsquo;ll
+                  simply be added to this one with their existing role.
                 </DialogDescription>
               </DialogHeader>
 
@@ -294,15 +303,36 @@ export function ClinicStaffPanel({
                 {inviteError && (
                   <p className="text-sm text-destructive">{inviteError}</p>
                 )}
+                {inviteInfo && (
+                  <p className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+                    {inviteInfo}
+                  </p>
+                )}
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleInvite} disabled={!canInvite || isPending}>
-                  {isPending ? 'Adding…' : 'Add Staff'}
-                </Button>
+                {inviteInfo ? (
+                  <Button
+                    onClick={() => {
+                      setOpen(false)
+                      resetInviteForm()
+                    }}
+                  >
+                    Done
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="outline" onClick={() => setOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleInvite}
+                      disabled={!canInvite || isPending}
+                    >
+                      {isPending ? 'Adding…' : 'Add Staff'}
+                    </Button>
+                  </>
+                )}
               </DialogFooter>
             </DialogContent>
           </Dialog>
