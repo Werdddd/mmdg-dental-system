@@ -8,6 +8,7 @@ import { getCurrentProfile } from '@/lib/auth/profile'
 import {
   createPatient,
   updatePatient,
+  getPatientById,
   type NewPatientInput,
   type UpdatePatientInput,
 } from '@/lib/data/patients'
@@ -40,6 +41,11 @@ import {
 } from '@/lib/data/patient-radiograph-consents'
 import type { ClinicBranch } from '@/lib/dental/branches'
 import { AppError, toActionErrorMessage } from '@/lib/errors'
+
+export async function getPatientByIdAction(patientId: string) {
+  const supabase = await createClient()
+  return getPatientById(supabase, patientId)
+}
 
 export async function addPatientAction(
   input: NewPatientInput,
