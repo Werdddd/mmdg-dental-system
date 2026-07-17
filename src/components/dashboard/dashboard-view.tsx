@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CheckCircle, Clock, Users } from 'lucide-react'
+import { Building2, CalendarDays, CheckCircle, Clock, Users } from 'lucide-react'
 
 import { StatCard } from '@/components/dashboard/stat-card'
 import { RecentAppointmentsTable } from '@/components/dashboard/recent-appointments-table'
@@ -124,6 +124,7 @@ export function DashboardView({
   )
 
   const firstName = profileName.split(' ')[0] ?? 'Doctor'
+  const activeClinicName = clinics.find((c) => c.id === activeClinicId)?.name
 
   return (
     <>
@@ -140,6 +141,12 @@ export function DashboardView({
           </div>
           {activeClinicId && clinics.length > 1 && (
             <ClinicSelector clinics={clinics} activeClinicId={activeClinicId} />
+          )}
+          {activeClinicId && clinics.length <= 1 && activeClinicName && (
+            <div className="flex h-9 shrink-0 items-center gap-2 rounded-md border border-dashed px-3 text-sm font-medium text-muted-foreground">
+              <Building2 className="size-4 shrink-0" />
+              {activeClinicName}
+            </div>
           )}
         </div>
       </div>
