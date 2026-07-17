@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { StatusBadge } from '@/components/shared/status-badge'
+import { TimeSlotPicker } from '@/components/shared/time-slot-picker'
 import {
   updateAppointmentStatusAction,
   addAppointmentAction,
@@ -232,11 +233,10 @@ function StatusUpdateDialog({ open, onOpenChange, current, allAppointments, onSa
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-blue-700">Time</label>
-                  <Input
-                    type="time"
+                  <TimeSlotPicker
                     value={rescheduleTime}
-                    onChange={(e) => setRescheduleTime(e.target.value)}
-                    className="h-8 bg-white text-sm"
+                    onValueChange={setRescheduleTime}
+                    triggerClassName="h-8 w-full bg-white text-sm"
                   />
                 </div>
               </div>

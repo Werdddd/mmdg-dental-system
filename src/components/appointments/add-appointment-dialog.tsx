@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input' // used for date/time fields
 import { Badge } from '@/components/ui/badge'
 import { PatientPicker } from '@/components/shared/patient-picker'
 import { DentistPicker } from '@/components/shared/dentist-picker'
+import { TimeSlotPicker } from '@/components/shared/time-slot-picker'
 import { RadiographConsentDialog } from '@/components/appointments/radiograph-consent-dialog'
 import { useClinicContext } from '@/components/layout/clinic-context'
 import type {
@@ -298,14 +299,11 @@ export function AddAppointmentDialog({
                   onChange={(event) => setDate(event.target.value)}
                 />
               </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Time</label>
-                <Input
-                  type="time"
-                  value={time}
-                  onChange={(event) => setTime(event.target.value)}
-                />
-              </div>
+              <TimeSlotPicker
+                value={time}
+                onValueChange={setTime}
+                label="Time"
+              />
             </div>
 
             <div>
