@@ -66,6 +66,7 @@ function buildWeeklyStats(appointments: AppointmentRow[]) {
 
 interface DashboardViewProps {
   appointments: AppointmentRow[]
+  allAppointments: AppointmentRow[]
   patients: PatientRow[]
   dentists: DentistOption[]
   invoicesWithBalance: InvoiceRow[]
@@ -75,6 +76,7 @@ interface DashboardViewProps {
 
 export function DashboardView({
   appointments,
+  allAppointments,
   patients,
   dentists,
   invoicesWithBalance,
@@ -176,7 +178,7 @@ export function DashboardView({
           <RecentAppointmentsTable appointments={recentAppointments} />
         </div>
         <CalendarCard
-          appointments={appointments}
+          appointments={allAppointments}
           patients={patients}
           dentists={dentists}
         />

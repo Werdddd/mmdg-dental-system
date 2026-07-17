@@ -412,6 +412,11 @@ export function AppointmentDetailsDialog({
                     <p className="font-medium">{current.dentist.name}</p>
                     <p className="text-sm text-muted-foreground">{current.dentist.specialty}</p>
                   </div>
+                  {current.clinic && (
+                    <Badge variant="secondary" className="ml-auto shrink-0 text-[10px]">
+                      {current.clinic.name}
+                    </Badge>
+                  )}
                 </div>
               </div>
 
@@ -488,6 +493,7 @@ export function AppointmentDetailsDialog({
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {appt.dentist.name} &middot; {appt.dentist.specialty}
+                            {appt.clinic && ` · ${appt.clinic.name}`}
                           </p>
                         </div>
                         <StatusBadge status={appt.status} variants={STATUS_VARIANT} />

@@ -1,5 +1,7 @@
 'use client'
 
+import type { ReactNode } from 'react'
+
 import { ListToolbar } from '@/components/shared/list-toolbar'
 
 export type SortOption = 'Recent' | 'Oldest' | 'Patient (A–Z)' | 'Status'
@@ -18,6 +20,7 @@ interface AppointmentsToolbarProps {
   onSortChange: (value: SortOption) => void
   onNewClick: () => void
   onExportClick: () => void
+  extra?: ReactNode
 }
 
 export function AppointmentsToolbar({
@@ -27,6 +30,7 @@ export function AppointmentsToolbar({
   onSortChange,
   onNewClick,
   onExportClick,
+  extra,
 }: AppointmentsToolbarProps) {
   return (
     <ListToolbar
@@ -39,6 +43,7 @@ export function AppointmentsToolbar({
       primaryLabel="New Appointment"
       onPrimaryClick={onNewClick}
       onExportClick={onExportClick}
+      extra={extra}
     />
   )
 }

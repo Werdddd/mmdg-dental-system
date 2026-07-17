@@ -14,6 +14,10 @@ import {
   type SortOption,
 } from '@/components/appointments/appointments-toolbar'
 import { AppointmentsTable } from '@/components/appointments/appointments-table'
+import {
+  ClinicFilterSelect,
+  ALL_CLINICS,
+} from '@/components/appointments/clinic-filter-select'
 import { type AppointmentRow } from '@/components/appointments/data'
 import type { PatientRow } from '@/components/patients/data'
 import type { DentistOption } from '@/lib/data/dentists'
@@ -35,6 +39,9 @@ export function AppointmentsView({
   const { clinics, activeClinicId } = useClinicContext()
   const [appointments, setAppointments] =
     useState<AppointmentRow[]>(initialAppointments)
+  const [clinicFilter, setClinicFilter] = useState<string>(
+    activeClinicId ?? ALL_CLINICS,
+  )
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortOption>('Recent')
   const [pageSize, setPageSize] = useState('10')
@@ -44,15 +51,35 @@ export function AppointmentsView({
     useState<AppointmentRow | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
 
+  // Every clinic that shows up either in this staff member's memberships or
+  // in the fetched appointments — the latter covers a rotating dentist's
+  // booking at a clinic this viewer doesn't belong to.
+  const clinicOptions = useMemo(() => {
+    const map = new Map<string, string>()
+    clinics.forEach((c) => map.set(c.id, c.name))
+    appointments.forEach((a) => {
+      if (a.clinic) map.set(a.clinic.id, a.clinic.name)
+    })
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    )
+  }, [clinics, appointments])
+
+  const clinicScoped = useMemo(() => {
+    if (clinicFilter === ALL_CLINICS) return appointments
+    return appointments.filter((appt) => appt.clinic?.id === clinicFilter)
+  }, [appointments, clinicFilter])
+
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
     const rows = query
-      ? appointments.filter(
+      ? clinicScoped.filter(
           (appt) =>
             appt.patient.name.toLowerCase().includes(query) ||
-            appt.dentist.name.toLowerCase().includes(query),
+            appt.dentist.name.toLowerCase().includes(query) ||
+            (appt.clinic?.name.toLowerCase().includes(query) ?? false),
         )
-      : [...appointments]
+      : [...clinicScoped]
 
     switch (sort) {
       case 'Oldest':
@@ -65,13 +92,18 @@ export function AppointmentsView({
       default:
         return rows
     }
-  }, [appointments, search, sort])
+  }, [clinicScoped, search, sort])
 
   const size = Number(pageSize)
   const totalPages = Math.max(1, Math.ceil(filtered.length / size))
   const currentPage = Math.min(page, totalPages)
   const start = (currentPage - 1) * size
   const visible = filtered.slice(start, start + size)
+
+  function handleClinicFilterChange(value: string) {
+    setClinicFilter(value)
+    setPage(1)
+  }
 
   function handleSearchChange(value: string) {
     setSearch(value)
@@ -103,6 +135,7 @@ export function AppointmentsView({
         'Phone',
         'Dentist',
         'Specialty',
+        'Clinic',
         'Status',
         'Notes',
       ],
@@ -113,6 +146,7 @@ export function AppointmentsView({
         appt.patient.phone,
         appt.dentist.name,
         appt.dentist.specialty,
+        appt.clinic?.name ?? '',
         appt.status,
         appt.notes,
       ]),
@@ -144,7 +178,7 @@ export function AppointmentsView({
               Appointments
             </h1>
             <Badge variant="purple">
-              {appointments.length} total appointments
+              {clinicScoped.length} total appointments
             </Badge>
           </div>
           {activeClinicId && clinics.length > 1 && (
@@ -152,11 +186,13 @@ export function AppointmentsView({
           )}
         </div>
         <p className="text-muted-foreground">
-          Manage upcoming, ongoing, and past patient appointments.
+          {clinicOptions.length > 1
+            ? "Filter by clinic to check a dentist's schedule at another clinic and avoid double-booking them."
+            : 'Manage upcoming, ongoing, and past patient appointments.'}
         </p>
       </div>
 
-      <AppointmentsSummaryCards appointments={appointments} />
+      <AppointmentsSummaryCards appointments={clinicScoped} />
 
       <AppointmentsToolbar
         search={search}
@@ -165,6 +201,16 @@ export function AppointmentsView({
         onSortChange={handleSortChange}
         onNewClick={() => setAddOpen(true)}
         onExportClick={handleExport}
+        extra={
+          clinicOptions.length > 1 ? (
+            <ClinicFilterSelect
+              options={clinicOptions}
+              value={clinicFilter}
+              onValueChange={handleClinicFilterChange}
+              ownClinicId={activeClinicId}
+            />
+          ) : undefined
+        }
       />
 
       <div className="rounded-xl border bg-card shadow-sm">

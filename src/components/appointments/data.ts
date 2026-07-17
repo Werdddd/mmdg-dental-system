@@ -67,6 +67,9 @@ export interface AppointmentRow {
   dentist: { id: string; name: string; initials: string; specialty: string }
   notes: string
   status: AppointmentStatus
+  // Optional: absent on the legacy mock data below, always present on
+  // Supabase-backed rows (see getAllAppointments in lib/data/appointments).
+  clinic?: { id: string; name: string }
 }
 
 // ── Mock data ─────────────────────────────────────────────────────────────────

@@ -42,6 +42,7 @@ export function AppointmentsTable({
           <TableHead>Date &amp; Time</TableHead>
           <TableHead>Patient</TableHead>
           <TableHead>Dentist</TableHead>
+          <TableHead>Clinic</TableHead>
           <TableHead>Treatment Done</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>
@@ -51,7 +52,7 @@ export function AppointmentsTable({
       </TableHeader>
       <TableBody>
         {appointments.length === 0 && (
-          <TableEmpty colSpan={6}>
+          <TableEmpty colSpan={7}>
             No appointments match your search.
           </TableEmpty>
         )}
@@ -94,6 +95,13 @@ export function AppointmentsTable({
                   </p>
                 </div>
               </div>
+            </TableCell>
+            <TableCell className="whitespace-nowrap">
+              {appt.clinic ? (
+                <span className="text-sm">{appt.clinic.name}</span>
+              ) : (
+                <span className="text-sm text-muted-foreground/50">—</span>
+              )}
             </TableCell>
             <TableCell className="max-w-[200px]">
               {appt.notes ? (

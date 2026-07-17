@@ -19,17 +19,20 @@ interface AppointmentQueryRow {
   id: string
   patient_id: string
   dentist_id: string
+  clinic_id: string
   scheduled_at: string
   status: AppointmentStatus
   notes: string | null
   patient: { full_name: string; phone: string | null } | null
   dentist: { full_name: string | null; specialty: string | null } | null
+  clinic: { name: string } | null
 }
 
 const SELECT = `
-  id, patient_id, dentist_id, scheduled_at, status, notes,
+  id, patient_id, dentist_id, clinic_id, scheduled_at, status, notes,
   patient:patients ( full_name, phone ),
-  dentist:profiles ( full_name, specialty )
+  dentist:profiles ( full_name, specialty ),
+  clinic:clinics ( name )
 `
 
 function mapAppointmentRow(row: AppointmentQueryRow): AppointmentRow {
@@ -56,6 +59,10 @@ function mapAppointmentRow(row: AppointmentQueryRow): AppointmentRow {
     },
     notes: row.notes ?? '',
     status: row.status,
+    clinic: {
+      id: row.clinic_id,
+      name: row.clinic?.name ?? 'Unknown Clinic',
+    },
   }
 }
 
@@ -67,6 +74,24 @@ export async function getAppointments(
     .from('appointments')
     .select(SELECT)
     .eq('clinic_id', clinicId)
+    .order('scheduled_at', { ascending: false })
+
+  if (error) throw error
+  return ((data ?? []) as unknown as AppointmentQueryRow[]).map(
+    mapAppointmentRow,
+  )
+}
+
+// Cross-clinic read, relying on the "Clinic staff can view appointments in
+// any clinic" RLS policy (migration 0018). Dentists rotate between MMDG's
+// clinics, so staff need to see every clinic's bookings — not just the
+// active one — to spot a dentist's schedule conflicts before they book.
+export async function getAllAppointments(
+  supabase: SupabaseServerClient,
+): Promise<AppointmentRow[]> {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(SELECT)
     .order('scheduled_at', { ascending: false })
 
   if (error) throw error

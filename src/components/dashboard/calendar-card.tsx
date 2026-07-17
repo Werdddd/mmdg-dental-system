@@ -5,8 +5,13 @@ import { BellRing, CalendarPlus, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useClinicContext } from '@/components/layout/clinic-context'
 import { AddAppointmentDialog } from '@/components/appointments/add-appointment-dialog'
 import { AppointmentDetailsDialog } from '@/components/appointments/appointment-details-dialog'
+import {
+  ClinicFilterSelect,
+  ALL_CLINICS,
+} from '@/components/appointments/clinic-filter-select'
 import type {
   AppointmentRow,
   AppointmentStatus,
@@ -71,6 +76,7 @@ export function CalendarCard({
   dentists,
   onAppointmentAdded,
 }: CalendarCardProps) {
+  const { clinics, activeClinicId } = useClinicContext()
   const now = new Date()
   const todayIso = now.toISOString().slice(0, 10)
   const reminderDate = new Date(now)
@@ -83,9 +89,31 @@ export function CalendarCard({
   const [addOpen, setAddOpen] = useState(false)
   const [detailsAppt, setDetailsAppt] = useState<AppointmentRow | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [clinicFilter, setClinicFilter] = useState<string>(
+    activeClinicId ?? ALL_CLINICS,
+  )
 
   // Local appointments — updated optimistically when a new one is added
   const [appointments, setAppointments] = useState(initialAppointments)
+
+  // Every clinic that shows up either in this staff member's memberships or
+  // in the fetched appointments — the latter covers a rotating dentist's
+  // booking at a clinic this viewer doesn't belong to.
+  const clinicOptions = useMemo(() => {
+    const map = new Map<string, string>()
+    clinics.forEach((c) => map.set(c.id, c.name))
+    appointments.forEach((a) => {
+      if (a.clinic) map.set(a.clinic.id, a.clinic.name)
+    })
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    )
+  }, [clinics, appointments])
+
+  const clinicScoped = useMemo(() => {
+    if (clinicFilter === ALL_CLINICS) return appointments
+    return appointments.filter((a) => a.clinic?.id === clinicFilter)
+  }, [appointments, clinicFilter])
 
   const grid = useMemo(
     () => buildGrid(viewYear, viewMonth),
@@ -95,28 +123,28 @@ export function CalendarCard({
   // Days in the viewed month that have at least one appointment
   const markedDays = useMemo(() => {
     const set = new Set<number>()
-    appointments.forEach((a) => {
+    clinicScoped.forEach((a) => {
       const d = new Date(a.scheduledAt)
       if (d.getFullYear() === viewYear && d.getMonth() === viewMonth) {
         set.add(d.getDate())
       }
     })
     return set
-  }, [appointments, viewYear, viewMonth])
+  }, [clinicScoped, viewYear, viewMonth])
 
   // Appointments on the selected date, sorted by time
   const dayAppointments = useMemo(
     () =>
-      appointments
+      clinicScoped
         .filter((a) => a.scheduledAt.slice(0, 10) === selectedDate)
         .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)),
-    [appointments, selectedDate],
+    [clinicScoped, selectedDate],
   )
 
   // Appointments 3 days from now that still need a reminder call
   const reminderAppointments = useMemo(
     () =>
-      appointments
+      clinicScoped
         .filter(
           (a) =>
             a.scheduledAt.slice(0, 10) === reminderIso &&
@@ -125,7 +153,7 @@ export function CalendarCard({
             a.status !== 'No Show',
         )
         .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)),
-    [appointments, reminderIso],
+    [clinicScoped, reminderIso],
   )
 
   function prevMonth() {
@@ -194,6 +222,16 @@ export function CalendarCard({
           </button>
         </div>
       </div>
+
+      {clinicOptions.length > 1 && (
+        <ClinicFilterSelect
+          options={clinicOptions}
+          value={clinicFilter}
+          onValueChange={setClinicFilter}
+          ownClinicId={activeClinicId}
+          className="mt-2 h-8 w-full shrink-0 gap-1.5 text-xs"
+        />
+      )}
 
       {/* Calendar grid */}
       <table className="mt-3 w-full shrink-0 table-fixed border-collapse text-center text-xs">
@@ -306,8 +344,9 @@ export function CalendarCard({
                   <p className="truncate text-xs font-medium">
                     {appt.patient.name}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="truncate text-xs text-muted-foreground">
                     {appt.time} · {appt.dentist.name}
+                    {appt.clinic && ` · ${appt.clinic.name}`}
                   </p>
                 </div>
                 <Badge variant="secondary" className="shrink-0 text-[10px]">
