@@ -15,6 +15,7 @@ import {
 import { PatientCard } from '@/components/patients/patient-card'
 import { formatPatientCode, type PatientRow } from '@/components/patients/data'
 import { cn } from '@/lib/utils'
+import { downloadCsv } from '@/lib/export-csv'
 
 const PAGE_SIZE_OPTIONS = ['8', '12', '24', '48']
 
@@ -79,6 +80,36 @@ export function PatientsView({ initialPatients }: PatientsViewProps) {
     setPage(1)
   }
 
+  function handleExport() {
+    downloadCsv(
+      `patients-${new Date().toISOString().slice(0, 10)}.csv`,
+      [
+        'Patient ID',
+        'Name',
+        'Age',
+        'Gender',
+        'Phone',
+        'Email',
+        'Address',
+        'Registered Date',
+        'Last Appointment',
+        'Treatment Status',
+      ],
+      filtered.map((patient) => [
+        formatPatientCode(patient.patientNumber),
+        patient.name,
+        patient.age,
+        patient.gender,
+        patient.phone,
+        patient.email,
+        patient.address,
+        patient.registeredDate,
+        patient.lastAppointment,
+        patient.treatmentStatus,
+      ]),
+    )
+  }
+
   return (
     <>
       <div>
@@ -106,6 +137,7 @@ export function PatientsView({ initialPatients }: PatientsViewProps) {
         view={view}
         onViewChange={setView}
         onNewClick={() => router.push('/patients/new')}
+        onExportClick={handleExport}
       />
 
       {filtered.length === 0 ? (

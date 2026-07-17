@@ -15,6 +15,8 @@ import {
 } from '@/components/payments/payments-toolbar'
 import { type PaymentRow } from '@/components/payments/data'
 import type { InvoiceRow } from '@/components/invoices/data'
+import { downloadCsv } from '@/lib/export-csv'
+import { formatCurrency } from '@/lib/utils'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
@@ -88,6 +90,36 @@ export function PaymentsView({
     setPage(1)
   }
 
+  function handleExport() {
+    downloadCsv(
+      `payments-${new Date().toISOString().slice(0, 10)}.csv`,
+      [
+        'Payment ID',
+        'Invoice ID',
+        'Patient',
+        'Phone',
+        'Service',
+        'Dentist',
+        'Date',
+        'Amount',
+        'Method',
+        'Status',
+      ],
+      filtered.map((payment) => [
+        payment.id,
+        payment.invoiceId,
+        payment.patient.name,
+        payment.patient.phone,
+        payment.service,
+        payment.dentist,
+        payment.date,
+        formatCurrency(payment.amount),
+        payment.method,
+        payment.status,
+      ]),
+    )
+  }
+
   return (
     <>
       <div>
@@ -113,6 +145,7 @@ export function PaymentsView({
         sort={sort}
         onSortChange={handleSortChange}
         onNewClick={() => setAddOpen(true)}
+        onExportClick={handleExport}
       />
 
       <div className="rounded-xl border bg-card shadow-sm">

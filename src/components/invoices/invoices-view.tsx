@@ -16,6 +16,8 @@ import {
 import { type InvoiceRow } from '@/components/invoices/data'
 import type { PatientRow } from '@/components/patients/data'
 import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
+import { downloadCsv } from '@/lib/export-csv'
+import { formatCurrency } from '@/lib/utils'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
@@ -95,6 +97,34 @@ export function InvoicesView({
     setPage(1)
   }
 
+  function handleExport() {
+    downloadCsv(
+      `invoices-${new Date().toISOString().slice(0, 10)}.csv`,
+      [
+        'Invoice ID',
+        'Patient',
+        'Phone',
+        'Created Date',
+        'Due Date',
+        'Subtotal',
+        'Total',
+        'Balance',
+        'Status',
+      ],
+      filtered.map((invoice) => [
+        invoice.id,
+        invoice.patient.name,
+        invoice.patient.phone,
+        invoice.createdDate,
+        invoice.dueDate,
+        formatCurrency(invoice.subtotal),
+        formatCurrency(invoice.total),
+        formatCurrency(invoice.balance),
+        invoice.status,
+      ]),
+    )
+  }
+
   return (
     <>
       <div>
@@ -120,6 +150,7 @@ export function InvoicesView({
         sort={sort}
         onSortChange={handleSortChange}
         onNewClick={() => setAddOpen(true)}
+        onExportClick={handleExport}
       />
 
       <div className="rounded-xl border bg-card shadow-sm">

@@ -23,6 +23,7 @@ interface InvoicesToolbarProps {
   sort: InvoicesSortOption
   onSortChange: (value: InvoicesSortOption) => void
   onNewClick: () => void
+  onExportClick: () => void
 }
 
 export function InvoicesToolbar({
@@ -31,6 +32,7 @@ export function InvoicesToolbar({
   sort,
   onSortChange,
   onNewClick,
+  onExportClick,
 }: InvoicesToolbarProps) {
   return (
     <ListToolbar
@@ -42,6 +44,7 @@ export function InvoicesToolbar({
       onSortChange={onSortChange}
       primaryLabel="New Invoice"
       onPrimaryClick={onNewClick}
+      onExportClick={onExportClick}
     />
   )
 }

@@ -17,6 +17,7 @@ import { AppointmentsTable } from '@/components/appointments/appointments-table'
 import { type AppointmentRow } from '@/components/appointments/data'
 import type { PatientRow } from '@/components/patients/data'
 import type { DentistOption } from '@/lib/data/dentists'
+import { downloadCsv } from '@/lib/export-csv'
 
 const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 
@@ -92,12 +93,41 @@ export function AppointmentsView({
     setPage(1)
   }
 
+  function handleExport() {
+    downloadCsv(
+      `appointments-${new Date().toISOString().slice(0, 10)}.csv`,
+      [
+        'Date',
+        'Time',
+        'Patient',
+        'Phone',
+        'Dentist',
+        'Specialty',
+        'Status',
+        'Notes',
+      ],
+      filtered.map((appt) => [
+        appt.date,
+        appt.time,
+        appt.patient.name,
+        appt.patient.phone,
+        appt.dentist.name,
+        appt.dentist.specialty,
+        appt.status,
+        appt.notes,
+      ]),
+    )
+  }
+
   function handleRowClick(appointment: AppointmentRow) {
     setSelectedAppointment(appointment)
     setDetailsOpen(true)
   }
 
-  function handleStatusChanged(updated: AppointmentRow, newAppointment?: AppointmentRow) {
+  function handleStatusChanged(
+    updated: AppointmentRow,
+    newAppointment?: AppointmentRow,
+  ) {
     setAppointments((prev) => {
       const replaced = prev.map((a) => (a.id === updated.id ? updated : a))
       return newAppointment ? [newAppointment, ...replaced] : replaced
@@ -134,6 +164,7 @@ export function AppointmentsView({
         sort={sort}
         onSortChange={handleSortChange}
         onNewClick={() => setAddOpen(true)}
+        onExportClick={handleExport}
       />
 
       <div className="rounded-xl border bg-card shadow-sm">
