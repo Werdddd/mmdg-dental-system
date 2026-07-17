@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Banknote,
   Gift,
@@ -17,6 +18,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   Table,
   TableBody,
   TableCell,
@@ -26,6 +33,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { StatusBadge } from '@/components/shared/status-badge'
+import { SignaturePreview } from '@/components/shared/signature-preview'
 import { formatCurrency } from '@/lib/utils'
 import type { PaymentMethod, PaymentRow, PaymentStatus } from '@/components/payments/data'
 
@@ -52,6 +60,8 @@ interface PatientPaymentHistoryTableProps {
 export function PatientPaymentHistoryTable({
   entries,
 }: PatientPaymentHistoryTableProps) {
+  const [selected, setSelected] = useState<PaymentRow | null>(null)
+
   return (
     <div className="rounded-xl border bg-card shadow-sm">
       <Table>
@@ -132,6 +142,9 @@ export function PatientPaymentHistoryTable({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <DropdownMenuItem>View receipt</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelected(entry)}>
+                        View signature
+                      </DropdownMenuItem>
                       <DropdownMenuItem>Print invoice</DropdownMenuItem>
                       {entry.invoiceBalance > 0 && (
                         <DropdownMenuItem>Send reminder</DropdownMenuItem>
@@ -144,6 +157,29 @@ export function PatientPaymentHistoryTable({
           })}
         </TableBody>
       </Table>
+
+      <Dialog
+        open={selected !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelected(null)
+        }}
+      >
+        <DialogContent>
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Patient Signature — {selected.invoiceId}</DialogTitle>
+              </DialogHeader>
+              <SignaturePreview
+                label="Patient Signature"
+                signature={selected.signature}
+                printedName={selected.signaturePrintedName ?? selected.patient.name}
+                date={selected.date}
+              />
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -8,6 +8,7 @@ import type {
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, initialsOf } from '@/lib/utils'
 import { AppError } from '@/lib/errors'
+import type { SignatureValue } from '@/lib/dental/signature'
 
 const PROOF_BUCKET = 'payment-proofs'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
@@ -24,6 +25,9 @@ interface PaymentQueryRow {
   bank_name: string | null
   reference_number: string | null
   proof_photo_path: string | null
+  signature_type: 'drawn' | 'typed' | null
+  signature_data: string | null
+  signature_printed_name: string | null
   patient: { full_name: string; phone: string | null } | null
   invoice: {
     invoice_number: number
@@ -38,6 +42,7 @@ interface PaymentQueryRow {
 const SELECT = `
   id, payment_number, method, amount, status, paid_at, invoice_id, patient_id,
   bank_name, reference_number, proof_photo_path,
+  signature_type, signature_data, signature_printed_name,
   patient:patients ( full_name, phone ),
   invoice:invoices (
     invoice_number, balance,
@@ -73,6 +78,7 @@ function mapPaymentRow(
 
   return {
     id: `PAY-${row.payment_number}`,
+    rawId: row.id,
     invoiceId: row.invoice ? `INV-${row.invoice.invoice_number}` : '—',
     invoiceRawId: row.invoice_id,
     patientId: row.patient_id,
@@ -84,6 +90,7 @@ function mapPaymentRow(
     service,
     dentist,
     date: formatDisplayDate(row.paid_at.slice(0, 10)),
+    rawDate: row.paid_at.slice(0, 10),
     amount: Number(row.amount),
     method: row.method,
     status: row.status,
@@ -91,6 +98,10 @@ function mapPaymentRow(
     bankName: row.bank_name,
     referenceNumber: row.reference_number,
     proofPhotoUrl,
+    signature: row.signature_type
+      ? { type: row.signature_type, data: row.signature_data ?? '' }
+      : null,
+    signaturePrintedName: row.signature_printed_name,
   }
 }
 
@@ -137,6 +148,25 @@ export async function getPayments(
   return mapPaymentRows(supabase, (data ?? []) as unknown as PaymentQueryRow[])
 }
 
+export async function getPaymentById(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  id: string,
+): Promise<PaymentRow | null> {
+  const { data, error } = await supabase
+    .from('payments')
+    .select(SELECT)
+    .eq('clinic_id', clinicId)
+    .eq('id', id)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return null
+  return (
+    await mapPaymentRows(supabase, [data as unknown as PaymentQueryRow])
+  )[0]
+}
+
 export async function getPaymentsForPatient(
   supabase: SupabaseServerClient,
   clinicId: string,
@@ -178,6 +208,8 @@ export interface NewPaymentInput {
   bankName?: string | null
   referenceNumber?: string | null
   proofPhotoPath?: string | null
+  signature: SignatureValue
+  signaturePrintedName: string
 }
 
 export async function recordPayment(
@@ -200,6 +232,9 @@ export async function recordPayment(
   if (input.amount > Number(invoice.balance)) {
     throw new AppError('Payment amount exceeds the remaining balance.')
   }
+  if (!input.signature.data.trim()) {
+    throw new AppError('Patient signature is required to record a payment.')
+  }
 
   const { data, error } = await supabase
     .from('payments')
@@ -216,7 +251,119 @@ export async function recordPayment(
           ? input.referenceNumber?.trim() || null
           : null,
       proof_photo_path: input.proofPhotoPath ?? null,
+      signature_type: input.signature.type,
+      signature_data: input.signature.data,
+      signature_printed_name: input.signaturePrintedName.trim() || null,
     })
+    .select(SELECT)
+    .single()
+
+  if (error) throw error
+  return (
+    await mapPaymentRows(supabase, [data as unknown as PaymentQueryRow])
+  )[0]
+}
+
+export interface UpdatePaymentInput {
+  id: string
+  amount: number
+  method: PaymentMethod
+  date: string
+  bankName?: string | null
+  referenceNumber?: string | null
+  // undefined = keep the existing proof photo; string = replace it.
+  proofPhotoPath?: string | null
+  signature: SignatureValue
+  signaturePrintedName: string
+}
+
+export async function updatePayment(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  input: UpdatePaymentInput,
+): Promise<PaymentRow> {
+  const { data: existing, error: existingError } = await supabase
+    .from('payments')
+    .select('id, invoice_id, amount, status')
+    .eq('clinic_id', clinicId)
+    .eq('id', input.id)
+    .single()
+
+  if (existingError) throw existingError
+  if (existing.status === 'Refunded') {
+    throw new AppError('Refunded payments cannot be edited.')
+  }
+
+  const { data: invoice, error: invoiceError } = await supabase
+    .from('invoices')
+    .select('balance')
+    .eq('id', existing.invoice_id)
+    .single()
+
+  if (invoiceError) throw invoiceError
+
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    throw new AppError('Payment amount must be greater than zero.')
+  }
+  const availableBalance = Number(invoice.balance) + Number(existing.amount)
+  if (input.amount > availableBalance) {
+    throw new AppError('Payment amount exceeds the remaining balance.')
+  }
+  if (!input.signature.data.trim()) {
+    throw new AppError('Patient signature is required to record a payment.')
+  }
+
+  const payload: Record<string, unknown> = {
+    amount: input.amount,
+    method: input.method,
+    paid_at: new Date(input.date).toISOString(),
+    bank_name: input.method === 'Bank' ? input.bankName?.trim() || null : null,
+    reference_number:
+      input.method === 'Bank' || input.method === 'GCash'
+        ? input.referenceNumber?.trim() || null
+        : null,
+    signature_type: input.signature.type,
+    signature_data: input.signature.data,
+    signature_printed_name: input.signaturePrintedName.trim() || null,
+  }
+  if (input.proofPhotoPath !== undefined) {
+    payload.proof_photo_path = input.proofPhotoPath
+  }
+
+  const { data, error } = await supabase
+    .from('payments')
+    .update(payload)
+    .eq('id', input.id)
+    .select(SELECT)
+    .single()
+
+  if (error) throw error
+  return (
+    await mapPaymentRows(supabase, [data as unknown as PaymentQueryRow])
+  )[0]
+}
+
+export async function refundPayment(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  id: string,
+): Promise<PaymentRow> {
+  const { data: existing, error: existingError } = await supabase
+    .from('payments')
+    .select('status')
+    .eq('clinic_id', clinicId)
+    .eq('id', id)
+    .single()
+
+  if (existingError) throw existingError
+  if (existing.status === 'Refunded') {
+    throw new AppError('This payment has already been refunded.')
+  }
+
+  const { data, error } = await supabase
+    .from('payments')
+    .update({ status: 'Refunded' })
+    .eq('id', id)
     .select(SELECT)
     .single()
 

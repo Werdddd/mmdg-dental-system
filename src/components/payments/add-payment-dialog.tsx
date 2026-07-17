@@ -24,6 +24,7 @@ import type { InvoiceRow } from '@/components/invoices/data'
 import type { PaymentMethod, PaymentRow } from '@/components/payments/data'
 import { formatCurrency } from '@/lib/utils'
 import { recordPaymentAction } from '@/app/(app)/payments/actions'
+import { SignaturePad, type SignatureValue } from '@/components/shared/signature-pad'
 
 const METHODS: PaymentMethod[] = ['Cash', 'Bank', 'GCash', 'Sponsored', 'Pro Bono']
 
@@ -48,6 +49,8 @@ export function AddPaymentDialog({
   const [bankName, setBankName] = useState('')
   const [referenceNumber, setReferenceNumber] = useState('')
   const [proofPhoto, setProofPhoto] = useState<File | null>(null)
+  const [signature, setSignature] = useState<SignatureValue | null>(null)
+  const [signaturePrintedName, setSignaturePrintedName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -61,6 +64,8 @@ export function AddPaymentDialog({
     setBankName('')
     setReferenceNumber('')
     setProofPhoto(null)
+    setSignature(null)
+    setSignaturePrintedName('')
     setError(null)
   }
 
@@ -68,6 +73,7 @@ export function AddPaymentDialog({
     setInvoiceId(rawId)
     const invoice = invoices.find((inv) => inv.rawId === rawId)
     setAmount(invoice ? String(invoice.balance) : '')
+    setSignaturePrintedName(invoice?.patient.name ?? '')
   }
 
   function handleMethodChange(value: PaymentMethod) {
@@ -85,10 +91,11 @@ export function AddPaymentDialog({
     selectedInvoice != null &&
     amountValue <= selectedInvoice.balance &&
     date.length > 0 &&
+    signature !== null &&
     !isSubmitting
 
   async function handleSubmit() {
-    if (!canSubmit) return
+    if (!canSubmit || !signature) return
 
     setIsSubmitting(true)
     setError(null)
@@ -101,6 +108,9 @@ export function AddPaymentDialog({
       formData.set('bankName', bankName)
       formData.set('referenceNumber', referenceNumber)
       if (proofPhoto) formData.set('proofPhoto', proofPhoto)
+      formData.set('signatureType', signature.type)
+      formData.set('signatureData', signature.data)
+      formData.set('signaturePrintedName', signaturePrintedName)
 
       const payment = await recordPaymentAction(formData)
       onAdd(payment)
@@ -265,6 +275,34 @@ export function AddPaymentDialog({
               </div>
             </div>
           )}
+
+          <div className="space-y-3 rounded-lg border border-dashed p-3">
+            <SignaturePad
+              label="Patient Signature"
+              required
+              value={signature}
+              onChange={setSignature}
+              nameOptions={[
+                selectedInvoice?.patient.name ?? signaturePrintedName,
+              ].filter(Boolean)}
+            />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">
+                Printed Name
+              </label>
+              <Input
+                value={signaturePrintedName}
+                onChange={(event) =>
+                  setSignaturePrintedName(event.target.value)
+                }
+                placeholder={selectedInvoice?.patient.name ?? 'Patient name'}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The patient must sign to acknowledge the treatment(s) covered by
+              this payment.
+            </p>
+          </div>
 
           {error && (
             <p className="text-sm text-destructive" role="alert">

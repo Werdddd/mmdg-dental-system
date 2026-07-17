@@ -90,6 +90,10 @@ export function PaymentsView({
     setPage(1)
   }
 
+  function handleUpdatePayment(payment: PaymentRow) {
+    setPayments((prev) => prev.map((p) => (p.rawId === payment.rawId ? payment : p)))
+  }
+
   function handleExport() {
     downloadCsv(
       `payments-${new Date().toISOString().slice(0, 10)}.csv`,
@@ -149,7 +153,7 @@ export function PaymentsView({
       />
 
       <div className="rounded-xl border bg-card shadow-sm">
-        <PaymentsTable payments={visible} />
+        <PaymentsTable payments={visible} onUpdate={handleUpdatePayment} />
 
         <Pagination
           page={currentPage}

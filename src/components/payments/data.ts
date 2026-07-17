@@ -1,9 +1,12 @@
+import type { SignatureValue } from '@/lib/dental/signature'
+
 export type PaymentMethod = 'Cash' | 'Bank' | 'GCash' | 'Sponsored' | 'Pro Bono'
 
 export type PaymentStatus = 'Paid' | 'Refunded'
 
 export interface PaymentRow {
   id: string
+  rawId: string
   invoiceId: string
   invoiceRawId: string
   patientId: string
@@ -11,6 +14,7 @@ export interface PaymentRow {
   service: string
   dentist: string
   date: string
+  rawDate: string
   amount: number
   method: PaymentMethod
   status: PaymentStatus
@@ -18,6 +22,8 @@ export interface PaymentRow {
   bankName: string | null
   referenceNumber: string | null
   proofPhotoUrl: string | null
+  signature: SignatureValue | null
+  signaturePrintedName: string | null
 }
 
 export function computePaymentsSummary(payments: PaymentRow[]) {
