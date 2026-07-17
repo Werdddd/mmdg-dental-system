@@ -35,7 +35,9 @@ export function MainLayout({
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <ClinicProvider value={{ clinics, activeClinicId, isSuperAdmin }}>
+    <ClinicProvider
+      value={{ clinics, activeClinicId, isSuperAdmin, profileRole }}
+    >
       <div className="min-h-svh bg-muted/30">
         <Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
 

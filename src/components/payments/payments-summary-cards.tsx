@@ -1,6 +1,7 @@
 import { Banknote, CheckCircle2, HeartHandshake, RotateCcw } from 'lucide-react'
 
 import { StatCard } from '@/components/dashboard/stat-card'
+import { useClinicContext } from '@/components/layout/clinic-context'
 import {
   computePaymentsSummary,
   type PaymentRow,
@@ -13,15 +14,19 @@ interface PaymentsSummaryCardsProps {
 
 export function PaymentsSummaryCards({ payments }: PaymentsSummaryCardsProps) {
   const summary = computePaymentsSummary(payments)
+  const { profileRole } = useClinicContext()
+  const canViewRevenue = profileRole !== 'dental_assistant'
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        label="Total Revenue"
-        value={formatCurrency(summary.totalRevenue)}
-        icon={Banknote}
-        helperText="collected to date"
-      />
+      {canViewRevenue && (
+        <StatCard
+          label="Total Revenue"
+          value={formatCurrency(summary.totalRevenue)}
+          icon={Banknote}
+          helperText="collected to date"
+        />
+      )}
       <StatCard
         label="Completed Payments"
         value={String(summary.paidCount)}
