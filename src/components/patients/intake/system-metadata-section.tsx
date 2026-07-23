@@ -78,6 +78,10 @@ export function SystemMetadataSection({
                 {readOnlyMetadata.nextAppointmentDate}
               </dd>
             </div>
+            <div className="flex justify-between gap-2 sm:block">
+              <dt className="text-muted-foreground">Recall Date</dt>
+              <dd className="font-medium">{readOnlyMetadata.recallDate}</dd>
+            </div>
           </dl>
           <p className="text-xs text-muted-foreground">
             Patient Notes are managed separately from the Notes card on the

@@ -22,16 +22,28 @@ import {
 } from '@/components/ui/select'
 import type { InvoiceRow } from '@/components/invoices/data'
 import type { PaymentMethod, PaymentRow } from '@/components/payments/data'
+import type { DentistOption } from '@/lib/data/dentists'
 import { formatCurrency } from '@/lib/utils'
 import { recordPaymentAction } from '@/app/(app)/payments/actions'
-import { SignaturePad, type SignatureValue } from '@/components/shared/signature-pad'
+import {
+  SignaturePad,
+  type SignatureValue,
+} from '@/components/shared/signature-pad'
+import { PostPaymentFollowUpDialog } from '@/components/payments/post-payment-followup-dialog'
 
-const METHODS: PaymentMethod[] = ['Cash', 'Bank', 'GCash', 'Sponsored', 'Pro Bono']
+const METHODS: PaymentMethod[] = [
+  'Cash',
+  'Bank',
+  'GCash',
+  'Sponsored',
+  'Pro Bono',
+]
 
 interface AddPaymentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   invoices: InvoiceRow[]
+  dentists: DentistOption[]
   onAdd: (payment: PaymentRow) => void
 }
 
@@ -39,9 +51,14 @@ export function AddPaymentDialog({
   open,
   onOpenChange,
   invoices,
+  dentists,
   onAdd,
 }: AddPaymentDialogProps) {
   const router = useRouter()
+  const [followUp, setFollowUp] = useState<{
+    patientId: string
+    patientName: string
+  } | null>(null)
   const [invoiceId, setInvoiceId] = useState('')
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState<PaymentMethod>('Cash')
@@ -117,6 +134,10 @@ export function AddPaymentDialog({
       resetForm()
       onOpenChange(false)
       router.refresh()
+      setFollowUp({
+        patientId: payment.patientId,
+        patientName: payment.patient.name,
+      })
     } catch {
       setError('Could not record payment. Please try again.')
     } finally {
@@ -125,201 +146,215 @@ export function AddPaymentDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        onOpenChange(next)
-        if (!next) resetForm()
-      }}
-    >
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>New Payment</DialogTitle>
-          <DialogDescription>
-            Record a payment against an existing invoice.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          onOpenChange(next)
+          if (!next) resetForm()
+        }}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>New Payment</DialogTitle>
+            <DialogDescription>
+              Record a payment against an existing invoice.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">Invoice</label>
-            {invoices.length === 0 ? (
-              <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-                No outstanding invoices — generate an invoice first.
-              </p>
-            ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">
+                Invoice
+              </label>
+              {invoices.length === 0 ? (
+                <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                  No outstanding invoices — generate an invoice first.
+                </p>
+              ) : (
+                <Select
+                  value={invoiceId}
+                  onValueChange={(value) => value && handleInvoiceChange(value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue>
+                      {(id: string) => {
+                        const invoice = invoices.find((inv) => inv.rawId === id)
+                        return invoice
+                          ? `${invoice.id} — ${invoice.patient.name} — Balance ${formatCurrency(invoice.balance)}`
+                          : 'Select an invoice'
+                      }}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {invoices.map((invoice) => (
+                      <SelectItem key={invoice.rawId} value={invoice.rawId}>
+                        {invoice.id} — {invoice.patient.name} — Balance{' '}
+                        {formatCurrency(invoice.balance)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  Payment Date
+                </label>
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  Amount (₱)
+                </label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={selectedInvoice?.balance}
+                  value={amount}
+                  onChange={(event) => setAmount(event.target.value)}
+                  placeholder="1500"
+                />
+                {selectedInvoice && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Remaining balance: {formatCurrency(selectedInvoice.balance)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">
+                Payment Method
+              </label>
               <Select
-                value={invoiceId}
-                onValueChange={(value) => value && handleInvoiceChange(value)}
+                value={method}
+                onValueChange={(value) =>
+                  value && handleMethodChange(value as PaymentMethod)
+                }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue>
-                    {(id: string) => {
-                      const invoice = invoices.find((inv) => inv.rawId === id)
-                      return invoice
-                        ? `${invoice.id} — ${invoice.patient.name} — Balance ${formatCurrency(invoice.balance)}`
-                        : 'Select an invoice'
-                    }}
-                  </SelectValue>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {invoices.map((invoice) => (
-                    <SelectItem key={invoice.rawId} value={invoice.rawId}>
-                      {invoice.id} — {invoice.patient.name} — Balance{' '}
-                      {formatCurrency(invoice.balance)}
+                  {METHODS.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {m}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Payment Date
-              </label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(event) => setDate(event.target.value)}
-              />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Amount (₱)
-              </label>
-              <Input
-                type="number"
-                min={0}
-                max={selectedInvoice?.balance}
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-                placeholder="1500"
-              />
-              {selectedInvoice && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Remaining balance: {formatCurrency(selectedInvoice.balance)}
-                </p>
-              )}
-            </div>
-          </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Payment Method
-            </label>
-            <Select
-              value={method}
-              onValueChange={(value) =>
-                value && handleMethodChange(value as PaymentMethod)
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {METHODS.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {(method === 'Bank' || method === 'GCash') && (
-            <div className="space-y-4 rounded-lg border border-dashed p-3">
-              {method === 'Bank' && (
+            {(method === 'Bank' || method === 'GCash') && (
+              <div className="space-y-4 rounded-lg border border-dashed p-3">
+                {method === 'Bank' && (
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium">
+                      Bank Name{' '}
+                      <span className="font-normal text-muted-foreground">
+                        (optional)
+                      </span>
+                    </label>
+                    <Input
+                      value={bankName}
+                      onChange={(event) => setBankName(event.target.value)}
+                      placeholder="e.g. BDO, BPI"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="mb-1.5 block text-sm font-medium">
-                    Bank Name{' '}
+                    Reference Number{' '}
                     <span className="font-normal text-muted-foreground">
                       (optional)
                     </span>
                   </label>
                   <Input
-                    value={bankName}
-                    onChange={(event) => setBankName(event.target.value)}
-                    placeholder="e.g. BDO, BPI"
+                    value={referenceNumber}
+                    onChange={(event) => setReferenceNumber(event.target.value)}
+                    placeholder="e.g. REF123456789"
                   />
                 </div>
-              )}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">
-                  Reference Number{' '}
-                  <span className="font-normal text-muted-foreground">
-                    (optional)
-                  </span>
-                </label>
-                <Input
-                  value={referenceNumber}
-                  onChange={(event) => setReferenceNumber(event.target.value)}
-                  placeholder="e.g. REF123456789"
-                />
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">
+                    Proof of Payment{' '}
+                    <span className="font-normal text-muted-foreground">
+                      (optional)
+                    </span>
+                  </label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) =>
+                      setProofPhoto(event.target.files?.[0] ?? null)
+                    }
+                  />
+                </div>
               </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">
-                  Proof of Payment{' '}
-                  <span className="font-normal text-muted-foreground">
-                    (optional)
-                  </span>
-                </label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) =>
-                    setProofPhoto(event.target.files?.[0] ?? null)
-                  }
-                />
-              </div>
-            </div>
-          )}
+            )}
 
-          <div className="space-y-3 rounded-lg border border-dashed p-3">
-            <SignaturePad
-              label="Patient Signature"
-              required
-              value={signature}
-              onChange={setSignature}
-              nameOptions={[
-                selectedInvoice?.patient.name ?? signaturePrintedName,
-              ].filter(Boolean)}
-            />
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Printed Name
-              </label>
-              <Input
-                value={signaturePrintedName}
-                onChange={(event) =>
-                  setSignaturePrintedName(event.target.value)
-                }
-                placeholder={selectedInvoice?.patient.name ?? 'Patient name'}
+            <div className="space-y-3 rounded-lg border border-dashed p-3">
+              <SignaturePad
+                label="Patient Signature"
+                required
+                value={signature}
+                onChange={setSignature}
+                nameOptions={[
+                  selectedInvoice?.patient.name ?? signaturePrintedName,
+                ].filter(Boolean)}
               />
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  Printed Name
+                </label>
+                <Input
+                  value={signaturePrintedName}
+                  onChange={(event) =>
+                    setSignaturePrintedName(event.target.value)
+                  }
+                  placeholder={selectedInvoice?.patient.name ?? 'Patient name'}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The patient must sign to acknowledge the treatment(s) covered by
+                this payment.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              The patient must sign to acknowledge the treatment(s) covered by
-              this payment.
-            </p>
+
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          )}
-        </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={!canSubmit}>
+              {isSubmitting ? 'Recording…' : 'Record Payment'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit}>
-            {isSubmitting ? 'Recording…' : 'Record Payment'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <PostPaymentFollowUpDialog
+        open={followUp !== null}
+        onOpenChange={(next) => {
+          if (!next) setFollowUp(null)
+        }}
+        patientId={followUp?.patientId ?? ''}
+        patientName={followUp?.patientName ?? ''}
+        dentists={dentists}
+      />
+    </>
   )
 }

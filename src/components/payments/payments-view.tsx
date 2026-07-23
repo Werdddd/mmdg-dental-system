@@ -15,6 +15,7 @@ import {
 } from '@/components/payments/payments-toolbar'
 import { type PaymentRow } from '@/components/payments/data'
 import type { InvoiceRow } from '@/components/invoices/data'
+import type { DentistOption } from '@/lib/data/dentists'
 import { downloadCsv } from '@/lib/export-csv'
 import { formatCurrency } from '@/lib/utils'
 
@@ -23,11 +24,13 @@ const PAGE_SIZE_OPTIONS = ['5', '10', '25', '50']
 interface PaymentsViewProps {
   initialPayments: PaymentRow[]
   invoicesWithBalance: InvoiceRow[]
+  dentists: DentistOption[]
 }
 
 export function PaymentsView({
   initialPayments,
   invoicesWithBalance,
+  dentists,
 }: PaymentsViewProps) {
   const { clinics, activeClinicId } = useClinicContext()
   const [payments, setPayments] = useState<PaymentRow[]>(initialPayments)
@@ -91,7 +94,9 @@ export function PaymentsView({
   }
 
   function handleUpdatePayment(payment: PaymentRow) {
-    setPayments((prev) => prev.map((p) => (p.rawId === payment.rawId ? payment : p)))
+    setPayments((prev) =>
+      prev.map((p) => (p.rawId === payment.rawId ? payment : p)),
+    )
   }
 
   function handleExport() {
@@ -170,6 +175,7 @@ export function PaymentsView({
         open={addOpen}
         onOpenChange={setAddOpen}
         invoices={invoicesWithBalance}
+        dentists={dentists}
         onAdd={handleAddPayment}
       />
     </>

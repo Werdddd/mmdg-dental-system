@@ -9,6 +9,7 @@ import {
   createPatient,
   updatePatient,
   getPatientById,
+  setPatientRecall,
   type NewPatientInput,
   type UpdatePatientInput,
 } from '@/lib/data/patients'
@@ -87,6 +88,26 @@ export async function updatePatientAction(
   revalidatePath(`/patients/${patientId}`)
   revalidatePath(`/patients/${patientId}/edit`)
   return patient
+}
+
+export async function setPatientRecallAction(
+  patientId: string,
+  recallDate: string,
+  recallNote: string,
+) {
+  const clinicId = await getActiveClinicId()
+  const supabase = await createClient()
+  const profile = await getCurrentProfile()
+  await setPatientRecall(
+    supabase,
+    clinicId,
+    patientId,
+    profile?.id,
+    recallDate || null,
+    recallNote.trim() || null,
+  )
+  revalidatePath('/patients')
+  revalidatePath(`/patients/${patientId}`)
 }
 
 export async function addPatientNoteAction(patientId: string, content: string) {

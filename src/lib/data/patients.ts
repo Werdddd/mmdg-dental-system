@@ -72,6 +72,8 @@ interface PatientQueryRow {
   updated_by: string | null
   updated_at: string
   photo_path: string | null
+  recall_date: string | null
+  recall_note: string | null
   created_by_profile: ProfileNameRow | null
   updated_by_profile: ProfileNameRow | null
   appointments: AppointmentRow[] | null
@@ -87,6 +89,7 @@ const SELECT = `
   chief_complaint, symptoms, affected_area, complaint_remarks,
   history_of_present_illness, initial_clinical_findings, diagnosis, treatment_recommendations,
   record_status, created_by, updated_by, updated_at, photo_path,
+  recall_date, recall_note,
   created_by_profile:profiles!patients_created_by_fkey ( full_name ),
   updated_by_profile:profiles!patients_updated_by_fkey ( full_name ),
   appointments ( scheduled_at, notes )
@@ -183,6 +186,8 @@ function mapPatientRow(row: PatientQueryRow, photoUrl: string): PatientRow {
       updatedAt: formatDisplayDate(row.updated_at.slice(0, 10)),
       lastAppointmentDate,
       nextAppointmentDate,
+      recallDate: row.recall_date ? formatDisplayDate(row.recall_date) : '—',
+      recallNote: row.recall_note ?? '',
     },
   }
 }
@@ -484,6 +489,31 @@ export async function updatePatient(
     : ''
 
   return patient
+}
+
+// A lightweight follow-up flag — separate from booking an actual
+// appointment — so front-desk staff can note when to reach back out to a
+// patient (e.g. after a payment) without occupying a real time slot.
+export async function setPatientRecall(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  patientId: string,
+  profileId: string | undefined,
+  recallDate: string | null,
+  recallNote: string | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from('patients')
+    .update({
+      recall_date: recallDate,
+      recall_note: recallNote,
+      updated_by: profileId ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('clinic_id', clinicId)
+    .eq('id', patientId)
+
+  if (error) throw error
 }
 
 export async function getPatientIntakeExtras(

@@ -225,6 +225,7 @@ export function DashboardView({
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
         invoices={invoicesWithBalance}
+        dentists={dentists}
         onAdd={() => setPaymentOpen(false)}
       />
     </>

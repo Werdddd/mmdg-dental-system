@@ -34,6 +34,8 @@ export interface SystemMetadata {
   updatedAt: string
   lastAppointmentDate: string
   nextAppointmentDate: string
+  recallDate: string
+  recallNote: string
 }
 
 export function formatPatientCode(patientNumber: number) {

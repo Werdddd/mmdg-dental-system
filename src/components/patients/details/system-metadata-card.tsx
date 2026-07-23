@@ -38,6 +38,14 @@ export function SystemMetadataCard({ metadata }: SystemMetadataCardProps) {
       <InfoRow label="Updated At" value={metadata.updatedAt} />
       <InfoRow label="Last Appointment" value={metadata.lastAppointmentDate} />
       <InfoRow label="Next Appointment" value={metadata.nextAppointmentDate} />
+      <InfoRow
+        label="Recall Date"
+        value={
+          metadata.recallNote
+            ? `${metadata.recallDate} — ${metadata.recallNote}`
+            : metadata.recallDate
+        }
+      />
     </InfoCard>
   )
 }
