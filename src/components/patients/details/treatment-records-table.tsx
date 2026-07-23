@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Download } from 'lucide-react'
 import type { VariantProps } from 'class-variance-authority'
 
 import { type badgeVariants } from '@/components/ui/badge'
@@ -21,6 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { StatusBadge } from '@/components/shared/status-badge'
+import { downloadCsv } from '@/lib/export-csv'
 import { formatCurrency } from '@/lib/utils'
 import type {
   TreatmentRecordRow,
@@ -45,8 +47,51 @@ export function TreatmentRecordsTable({ entries }: TreatmentRecordsTableProps) {
   const [selected, setSelected] = useState<TreatmentRecordRow | null>(null)
   const pendingCount = entries.filter((e) => e.status === 'Pending').length
 
+  function handleExport() {
+    downloadCsv(
+      `treatment-records-${new Date().toISOString().slice(0, 10)}.csv`,
+      [
+        'Date',
+        'Patient',
+        'Treatment',
+        'Tooth',
+        'Branch',
+        'Dentist',
+        'Clinic',
+        'Cost',
+        'Status',
+        'Notes',
+      ],
+      entries.map((entry) => [
+        entry.performedAt,
+        entry.patientName,
+        entry.treatment,
+        entry.tooth ?? '',
+        entry.branch ?? '',
+        entry.dentist,
+        entry.clinicName,
+        formatCurrency(entry.cost),
+        entry.status,
+        entry.notes,
+      ]),
+    )
+  }
+
   return (
     <div className="space-y-2">
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1.5"
+          onClick={handleExport}
+          disabled={entries.length === 0}
+        >
+          <Download className="size-4" />
+          Export
+        </Button>
+      </div>
+
       {pendingCount > 0 && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
           <span>
