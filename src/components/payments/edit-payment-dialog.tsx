@@ -26,7 +26,17 @@ import type { SignatureValue } from '@/lib/dental/signature'
 import { formatCurrency } from '@/lib/utils'
 import { updatePaymentAction } from '@/app/(app)/payments/actions'
 
-const METHODS: PaymentMethod[] = ['Cash', 'Bank', 'GCash', 'Sponsored', 'Pro Bono']
+const METHODS: PaymentMethod[] = [
+  'Cash',
+  'Bank',
+  'GCash',
+  'Check',
+  'PayPal',
+  'Sponsored',
+  'Pro Bono',
+]
+
+const METHODS_WITH_REFERENCE: PaymentMethod[] = ['Bank', 'GCash', 'Check', 'PayPal']
 
 interface EditPaymentFormProps {
   payment: PaymentRow
@@ -145,7 +155,7 @@ function EditPaymentForm({ payment, onCancel, onSaved }: EditPaymentFormProps) {
           </Select>
         </div>
 
-        {(method === 'Bank' || method === 'GCash') && (
+        {METHODS_WITH_REFERENCE.includes(method) && (
           <div className="space-y-4 rounded-lg border border-dashed p-3">
             {method === 'Bank' && (
               <div>

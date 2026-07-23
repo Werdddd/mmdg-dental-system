@@ -1,4 +1,8 @@
-import type { InvoiceRow, InvoiceStatus } from '@/components/invoices/data'
+import type {
+  InvoiceDiscountType,
+  InvoiceRow,
+  InvoiceStatus,
+} from '@/components/invoices/data'
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, initialsOf } from '@/lib/utils'
 import { AppError } from '@/lib/errors'
@@ -9,6 +13,9 @@ interface InvoiceQueryRow {
   patient_id: string
   due_date: string | null
   subtotal: string | number
+  discount_type: InvoiceDiscountType
+  discount_percentage: string | number
+  discount_amount: string | number
   total: string | number
   balance: string | number
   status: InvoiceStatus
@@ -25,7 +32,9 @@ interface InvoiceQueryRow {
 }
 
 const SELECT = `
-  id, invoice_number, patient_id, due_date, subtotal, total, balance, status, created_at,
+  id, invoice_number, patient_id, due_date, subtotal,
+  discount_type, discount_percentage, discount_amount,
+  total, balance, status, created_at,
   patient:patients ( full_name, phone ),
   invoice_items ( id, treatment_record_id, description, quantity, unit_price, amount )
 `
@@ -51,6 +60,9 @@ function mapInvoiceRow(row: InvoiceQueryRow): InvoiceRow {
     createdDate: formatDisplayDate(row.created_at.slice(0, 10)),
     dueDate: row.due_date ? formatDisplayDate(row.due_date) : '—',
     subtotal: Number(row.subtotal),
+    discountType: row.discount_type,
+    discountPercentage: Number(row.discount_percentage),
+    discountAmount: Number(row.discount_amount),
     total: Number(row.total),
     balance: Number(row.balance),
     status: row.status,
@@ -90,6 +102,8 @@ export interface GenerateInvoiceInput {
   patientId: string
   treatmentRecordIds: string[]
   dueDate: string
+  discountType?: InvoiceDiscountType
+  discountPercentage?: number
 }
 
 export async function generateInvoice(
@@ -110,6 +124,8 @@ export async function generateInvoice(
       p_patient_id: input.patientId,
       p_treatment_record_ids: input.treatmentRecordIds,
       p_due_date: input.dueDate,
+      p_discount_type: input.discountType ?? 'None',
+      p_discount_percentage: input.discountPercentage ?? 0,
     },
   )
 

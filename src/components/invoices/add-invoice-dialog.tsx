@@ -13,12 +13,25 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { PatientPicker } from '@/components/shared/patient-picker'
-import type { InvoiceRow } from '@/components/invoices/data'
+import type { InvoiceDiscountType, InvoiceRow } from '@/components/invoices/data'
 import type { PatientRow } from '@/components/patients/data'
 import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
 import { formatCurrency } from '@/lib/utils'
 import { generateInvoiceAction } from '@/app/(app)/invoices/actions'
+
+const DISCOUNT_OPTIONS: { value: InvoiceDiscountType; label: string }[] = [
+  { value: 'None', label: 'No Discount' },
+  { value: 'PWD/Senior Citizen', label: 'PWD / Senior Citizen (20%)' },
+  { value: 'Special Discount', label: 'Special Discount' },
+]
 
 interface AddInvoiceDialogProps {
   open: boolean
@@ -39,6 +52,8 @@ export function AddInvoiceDialog({
   const [patientId, setPatientId] = useState('')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [dueDate, setDueDate] = useState('')
+  const [discountType, setDiscountType] = useState<InvoiceDiscountType>('None')
+  const [specialDiscountPercentage, setSpecialDiscountPercentage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,7 +66,14 @@ export function AddInvoiceDialog({
     setPatientId('')
     setSelectedIds([])
     setDueDate('')
+    setDiscountType('None')
+    setSpecialDiscountPercentage('')
     setError(null)
+  }
+
+  function handleDiscountTypeChange(value: InvoiceDiscountType) {
+    setDiscountType(value)
+    if (value !== 'Special Discount') setSpecialDiscountPercentage('')
   }
 
   function handlePatientChange(id: string) {
@@ -71,10 +93,27 @@ export function AddInvoiceDialog({
     .filter((t) => selectedIds.includes(t.id))
     .reduce((sum, t) => sum + t.cost, 0)
 
+  const specialDiscountValue = Number(specialDiscountPercentage)
+  const isSpecialDiscountValid =
+    specialDiscountPercentage.trim().length > 0 &&
+    Number.isFinite(specialDiscountValue) &&
+    specialDiscountValue >= 0 &&
+    specialDiscountValue <= 100
+
+  const discountPercentage =
+    discountType === 'PWD/Senior Citizen'
+      ? 20
+      : discountType === 'Special Discount' && isSpecialDiscountValid
+        ? specialDiscountValue
+        : 0
+  const discountAmount = Math.round(((subtotal * discountPercentage) / 100) * 100) / 100
+  const total = subtotal - discountAmount
+
   const canSubmit =
     patientId.length > 0 &&
     selectedIds.length > 0 &&
     dueDate.length > 0 &&
+    (discountType !== 'Special Discount' || isSpecialDiscountValid) &&
     !isSubmitting
 
   async function handleSubmit() {
@@ -87,6 +126,8 @@ export function AddInvoiceDialog({
         patientId,
         treatmentRecordIds: selectedIds,
         dueDate,
+        discountType,
+        discountPercentage,
       })
       onAdd(invoice)
       resetForm()
@@ -178,10 +219,61 @@ export function AddInvoiceDialog({
             />
           </div>
 
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">
+              Discount
+            </label>
+            <Select
+              value={discountType}
+              onValueChange={(value) =>
+                value && handleDiscountTypeChange(value as InvoiceDiscountType)
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DISCOUNT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {discountType === 'Special Discount' && (
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                className="mt-2"
+                value={specialDiscountPercentage}
+                onChange={(event) =>
+                  setSpecialDiscountPercentage(event.target.value)
+                }
+                placeholder="Discount percentage, e.g. 10"
+              />
+            )}
+          </div>
+
           {selectedIds.length > 0 && (
-            <p className="text-sm text-muted-foreground">
-              Total: {formatCurrency(subtotal)}
-            </p>
+            <div className="space-y-1 rounded-lg border border-dashed p-3 text-sm">
+              <p className="flex items-center justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </p>
+              {discountAmount > 0 && (
+                <p className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    Discount ({discountPercentage}%)
+                  </span>
+                  <span>-{formatCurrency(discountAmount)}</span>
+                </p>
+              )}
+              <p className="flex items-center justify-between font-medium">
+                <span>Total</span>
+                <span>{formatCurrency(total)}</span>
+              </p>
+            </div>
           )}
 
           {error && (

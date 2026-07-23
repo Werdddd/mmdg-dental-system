@@ -12,6 +12,7 @@ import type { SignatureValue } from '@/lib/dental/signature'
 
 const PROOF_BUCKET = 'payment-proofs'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
+const METHODS_WITH_REFERENCE: PaymentMethod[] = ['Bank', 'GCash', 'Check', 'PayPal']
 
 interface PaymentQueryRow {
   id: string
@@ -246,10 +247,9 @@ export async function recordPayment(
       method: input.method,
       paid_at: new Date(input.date).toISOString(),
       bank_name: input.method === 'Bank' ? input.bankName?.trim() || null : null,
-      reference_number:
-        input.method === 'Bank' || input.method === 'GCash'
-          ? input.referenceNumber?.trim() || null
-          : null,
+      reference_number: METHODS_WITH_REFERENCE.includes(input.method)
+        ? input.referenceNumber?.trim() || null
+        : null,
       proof_photo_path: input.proofPhotoPath ?? null,
       signature_type: input.signature.type,
       signature_data: input.signature.data,
@@ -318,10 +318,9 @@ export async function updatePayment(
     method: input.method,
     paid_at: new Date(input.date).toISOString(),
     bank_name: input.method === 'Bank' ? input.bankName?.trim() || null : null,
-    reference_number:
-      input.method === 'Bank' || input.method === 'GCash'
-        ? input.referenceNumber?.trim() || null
-        : null,
+    reference_number: METHODS_WITH_REFERENCE.includes(input.method)
+      ? input.referenceNumber?.trim() || null
+      : null,
     signature_type: input.signature.type,
     signature_data: input.signature.data,
     signature_printed_name: input.signaturePrintedName.trim() || null,

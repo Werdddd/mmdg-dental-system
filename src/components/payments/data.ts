@@ -1,6 +1,13 @@
 import type { SignatureValue } from '@/lib/dental/signature'
 
-export type PaymentMethod = 'Cash' | 'Bank' | 'GCash' | 'Sponsored' | 'Pro Bono'
+export type PaymentMethod =
+  | 'Cash'
+  | 'Bank'
+  | 'GCash'
+  | 'Check'
+  | 'PayPal'
+  | 'Sponsored'
+  | 'Pro Bono'
 
 export type PaymentStatus = 'Paid' | 'Refunded'
 

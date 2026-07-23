@@ -35,9 +35,13 @@ const METHODS: PaymentMethod[] = [
   'Cash',
   'Bank',
   'GCash',
+  'Check',
+  'PayPal',
   'Sponsored',
   'Pro Bono',
 ]
+
+const METHODS_WITH_REFERENCE: PaymentMethod[] = ['Bank', 'GCash', 'Check', 'PayPal']
 
 interface AddPaymentDialogProps {
   open: boolean
@@ -252,7 +256,7 @@ export function AddPaymentDialog({
               </Select>
             </div>
 
-            {(method === 'Bank' || method === 'GCash') && (
+            {METHODS_WITH_REFERENCE.includes(method) && (
               <div className="space-y-4 rounded-lg border border-dashed p-3">
                 {method === 'Bank' && (
                   <div>

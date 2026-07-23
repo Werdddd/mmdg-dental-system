@@ -1,5 +1,7 @@
 export type InvoiceStatus = 'Paid' | 'Partially Paid' | 'Overdue' | 'Unpaid'
 
+export type InvoiceDiscountType = 'None' | 'PWD/Senior Citizen' | 'Special Discount'
+
 export interface InvoiceItemRow {
   id: string
   treatmentRecordId: string
@@ -18,6 +20,9 @@ export interface InvoiceRow {
   createdDate: string
   dueDate: string
   subtotal: number
+  discountType: InvoiceDiscountType
+  discountPercentage: number
+  discountAmount: number
   total: number
   balance: number
   status: InvoiceStatus

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import {
   Banknote,
+  CreditCard,
+  FileCheck,
   Gift,
   HeartHandshake,
   Landmark,
@@ -50,6 +52,8 @@ const METHOD_ICON: Record<PaymentMethod, LucideIcon> = {
   Cash: Banknote,
   Bank: Landmark,
   GCash: Wallet,
+  Check: FileCheck,
+  PayPal: CreditCard,
   Sponsored: HeartHandshake,
   'Pro Bono': Gift,
 }
