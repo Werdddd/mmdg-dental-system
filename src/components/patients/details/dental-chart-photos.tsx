@@ -243,7 +243,7 @@ export function DentalChartPhotos({
   return (
     <>
       <InfoCard
-        title="Chart Photos"
+        title="Document and Photos"
         icon={Images}
         action={
           !readOnly && (
