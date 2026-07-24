@@ -12,9 +12,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { SignaturePreview } from '@/components/shared/signature-preview'
 import { InfoCard } from '@/components/patients/details/info-card'
-import type { PatientMedicalHistoryRow } from '@/lib/data/patient-medical-history'
+import { MedicalHistoryEntryDialog } from '@/components/patients/intake/medical-history-entry-dialog'
+import type { PatientMedicalHistoryEntry } from '@/lib/data/patient-medical-history'
+import type { PatientRow } from '@/components/patients/data'
+import { formatDisplayDate } from '@/lib/utils'
 import {
   ADDITIONAL_QUESTIONS,
   GENERAL_QUESTIONS,
@@ -51,6 +61,11 @@ function QuestionAnswerRow({
   )
 }
 
+function entryLabel(entry: PatientMedicalHistoryEntry, index: number) {
+  const date = formatDisplayDate(entry.createdAt.slice(0, 10))
+  return index === 0 ? `Latest — ${date}` : date
+}
+
 function checkedConditionLabels(conditions: ConditionResponses) {
   return MEDICAL_CONDITION_CATEGORIES.flatMap((category) =>
     category.conditions
@@ -60,30 +75,59 @@ function checkedConditionLabels(conditions: ConditionResponses) {
 }
 
 interface MedicalHistoryCardProps {
-  medicalHistory: PatientMedicalHistoryRow | null
+  patientId: string
+  firstName: string
+  lastName: string
+  gender: PatientRow['gender']
+  medicalHistoryList: PatientMedicalHistoryEntry[]
   isFemale: boolean
 }
 
 export function MedicalHistoryCard({
-  medicalHistory,
+  patientId,
+  firstName,
+  lastName,
+  gender,
+  medicalHistoryList,
   isFemale,
 }: MedicalHistoryCardProps) {
-  const [open, setOpen] = useState(false)
-  const flaggedConditions = medicalHistory
-    ? checkedConditionLabels(medicalHistory.conditions)
+  const [entries, setEntries] = useState(medicalHistoryList)
+  const [viewOpen, setViewOpen] = useState(false)
+  const [newEntryOpen, setNewEntryOpen] = useState(false)
+  const [viewIndex, setViewIndex] = useState(0)
+
+  const latest = entries[0] ?? null
+  const flaggedConditions = latest
+    ? checkedConditionLabels(latest.conditions)
     : []
+  const viewed = entries[viewIndex] ?? null
+  const viewedFlaggedConditions = viewed
+    ? checkedConditionLabels(viewed.conditions)
+    : []
+
+  function openViewDialog() {
+    setViewIndex(0)
+    setViewOpen(true)
+  }
 
   return (
     <InfoCard
       title="Medical History"
       icon={ClipboardList}
       action={
-        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-          View Full Questionnaire
-        </Button>
+        <div className="flex gap-2">
+          {latest && (
+            <Button variant="outline" size="sm" onClick={openViewDialog}>
+              View Full Questionnaire
+            </Button>
+          )}
+          <Button size="sm" onClick={() => setNewEntryOpen(true)}>
+            Fill New Questionnaire
+          </Button>
+        </div>
       }
     >
-      {!medicalHistory ? (
+      {!latest ? (
         <p className="text-sm text-muted-foreground">
           No medical history on file yet.
         </p>
@@ -107,13 +151,18 @@ export function MedicalHistoryCard({
           </div>
           <SignaturePreview
             label="Patient Signature"
-            signature={medicalHistory.patientSignature}
-            date={medicalHistory.signedAt}
+            signature={latest.patientSignature}
+            date={latest.signedAt}
           />
+          {entries.length > 1 && (
+            <p className="text-xs text-muted-foreground">
+              {entries.length} questionnaires on file.
+            </p>
+          )}
         </>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
         <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Medical History Questionnaire</DialogTitle>
@@ -122,12 +171,32 @@ export function MedicalHistoryCard({
             </DialogDescription>
           </DialogHeader>
 
-          {!medicalHistory ? (
+          {!viewed ? (
             <p className="text-sm text-muted-foreground">
               No medical history on file yet.
             </p>
           ) : (
             <div className="space-y-5">
+              {entries.length > 1 && (
+                <Select
+                  value={String(viewIndex)}
+                  onValueChange={(v) => v && setViewIndex(Number(v))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a questionnaire">
+                      {entryLabel(viewed, viewIndex)}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent align="start">
+                    {entries.map((entry, index) => (
+                      <SelectItem key={entry.id} value={String(index)}>
+                        {entryLabel(entry, index)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
               <div>
                 <p className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   General Questions
@@ -137,7 +206,7 @@ export function MedicalHistoryCard({
                     key={q.key}
                     label={q.label}
                     questionKey={q.key}
-                    responses={medicalHistory.generalResponses}
+                    responses={viewed.generalResponses}
                   />
                 ))}
               </div>
@@ -146,13 +215,13 @@ export function MedicalHistoryCard({
                 <p className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   Medical Conditions
                 </p>
-                {flaggedConditions.length === 0 ? (
+                {viewedFlaggedConditions.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     None reported.
                   </p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
-                    {flaggedConditions.map((label) => (
+                    {viewedFlaggedConditions.map((label) => (
                       <Badge key={label} variant="warning">
                         {label}
                       </Badge>
@@ -170,7 +239,7 @@ export function MedicalHistoryCard({
                     key={q.key}
                     label={q.label}
                     questionKey={q.key}
-                    responses={medicalHistory.additionalResponses}
+                    responses={viewed.additionalResponses}
                   />
                 ))}
               </div>
@@ -185,7 +254,7 @@ export function MedicalHistoryCard({
                       key={q.key}
                       label={q.label}
                       questionKey={q.key}
-                      responses={medicalHistory.womenOnlyResponses}
+                      responses={viewed.womenOnlyResponses}
                     />
                   ))}
                 </div>
@@ -193,13 +262,23 @@ export function MedicalHistoryCard({
 
               <SignaturePreview
                 label="Patient Signature"
-                signature={medicalHistory.patientSignature}
-                date={medicalHistory.signedAt}
+                signature={viewed.patientSignature}
+                date={viewed.signedAt}
               />
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <MedicalHistoryEntryDialog
+        open={newEntryOpen}
+        onOpenChange={setNewEntryOpen}
+        patientId={patientId}
+        firstName={firstName}
+        lastName={lastName}
+        gender={gender}
+        onSaved={(entry) => setEntries((prev) => [entry, ...prev])}
+      />
     </InfoCard>
   )
 }

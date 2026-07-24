@@ -3,7 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { SignaturePad } from '@/components/shared/signature-pad'
 import { Field, SectionLabel } from '@/components/patients/intake/form-controls'
-import type { PatientIntakeFormValues } from '@/components/patients/intake/types'
+import type { MedicalHistorySectionValues } from '@/components/patients/intake/types'
 import {
   ADDITIONAL_QUESTIONS,
   GENERAL_QUESTIONS,
@@ -112,8 +112,8 @@ function ConditionCheckbox({
 }
 
 interface MedicalHistorySectionProps {
-  values: PatientIntakeFormValues
-  onChange: (patch: Partial<PatientIntakeFormValues>) => void
+  values: MedicalHistorySectionValues
+  onChange: (patch: Partial<MedicalHistorySectionValues>) => void
 }
 
 export function MedicalHistorySection({

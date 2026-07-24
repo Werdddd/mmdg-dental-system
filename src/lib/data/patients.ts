@@ -8,7 +8,7 @@ import {
 import type { SupabaseServerClient } from '@/lib/data/types'
 import { formatDisplayDate, formatMonthDay, initialsOf } from '@/lib/utils'
 import {
-  getPatientMedicalHistory,
+  listPatientMedicalHistory,
   upsertPatientMedicalHistory,
   type MedicalHistoryInput,
 } from '@/lib/data/patient-medical-history'
@@ -520,12 +520,18 @@ export async function getPatientIntakeExtras(
   supabase: SupabaseServerClient,
   patientId: string,
 ) {
-  const [medicalHistory, consentForm, radiographConsent] = await Promise.all([
-    getPatientMedicalHistory(supabase, patientId),
-    getPatientConsentForm(supabase, patientId),
-    getPatientRadiographConsent(supabase, patientId),
-  ])
-  return { medicalHistory, consentForm, radiographConsent }
+  const [medicalHistoryList, consentForm, radiographConsent] =
+    await Promise.all([
+      listPatientMedicalHistory(supabase, patientId),
+      getPatientConsentForm(supabase, patientId),
+      getPatientRadiographConsent(supabase, patientId),
+    ])
+  return {
+    medicalHistory: medicalHistoryList[0] ?? null,
+    medicalHistoryList,
+    consentForm,
+    radiographConsent,
+  }
 }
 
 export { isMinor }

@@ -66,7 +66,7 @@ export default async function PatientDetailsPage({
       dentists={dentists}
       treatmentRecords={treatmentRecords}
       payments={payments}
-      medicalHistory={intakeExtras.medicalHistory}
+      medicalHistoryList={intakeExtras.medicalHistoryList}
       consentForm={intakeExtras.consentForm}
       radiographConsent={intakeExtras.radiographConsent}
     />

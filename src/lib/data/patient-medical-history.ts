@@ -14,6 +14,11 @@ export interface PatientMedicalHistoryRow {
   signedAt: string
 }
 
+export interface PatientMedicalHistoryEntry extends PatientMedicalHistoryRow {
+  id: string
+  createdAt: string
+}
+
 export interface MedicalHistoryInput {
   generalResponses: QuestionnaireResponses
   additionalResponses: QuestionnaireResponses
@@ -24,6 +29,8 @@ export interface MedicalHistoryInput {
 }
 
 interface MedicalHistoryQueryRow {
+  id: string
+  created_at: string
   general_responses: QuestionnaireResponses | null
   additional_responses: QuestionnaireResponses | null
   women_only_responses: QuestionnaireResponses | null
@@ -34,8 +41,8 @@ interface MedicalHistoryQueryRow {
 }
 
 const SELECT = `
-  general_responses, additional_responses, women_only_responses, conditions,
-  patient_signature_type, patient_signature_data, signed_at
+  id, created_at, general_responses, additional_responses, women_only_responses,
+  conditions, patient_signature_type, patient_signature_data, signed_at
 `
 
 export const EMPTY_MEDICAL_HISTORY: PatientMedicalHistoryRow = {
@@ -47,8 +54,10 @@ export const EMPTY_MEDICAL_HISTORY: PatientMedicalHistoryRow = {
   signedAt: '',
 }
 
-function mapRow(row: MedicalHistoryQueryRow): PatientMedicalHistoryRow {
+function mapRow(row: MedicalHistoryQueryRow): PatientMedicalHistoryEntry {
   return {
+    id: row.id,
+    createdAt: row.created_at,
     generalResponses: row.general_responses ?? {},
     additionalResponses: row.additional_responses ?? {},
     womenOnlyResponses: row.women_only_responses ?? {},
@@ -63,18 +72,50 @@ function mapRow(row: MedicalHistoryQueryRow): PatientMedicalHistoryRow {
   }
 }
 
-export async function getPatientMedicalHistory(
+// Newest filing first — a patient can have multiple questionnaires on file
+// over time; the details page shows the latest (index 0) by default and
+// lets staff page back through the rest.
+export async function listPatientMedicalHistory(
   supabase: SupabaseServerClient,
   patientId: string,
-): Promise<PatientMedicalHistoryRow | null> {
+): Promise<PatientMedicalHistoryEntry[]> {
   const { data, error } = await supabase
     .from('patient_medical_history')
     .select(SELECT)
     .eq('patient_id', patientId)
-    .maybeSingle()
+    .order('created_at', { ascending: false })
 
   if (error) throw error
-  return data ? mapRow(data as unknown as MedicalHistoryQueryRow) : null
+  return (data as unknown as MedicalHistoryQueryRow[]).map(mapRow)
+}
+
+export async function createPatientMedicalHistory(
+  supabase: SupabaseServerClient,
+  clinicId: string,
+  patientId: string,
+  profileId: string | undefined,
+  input: MedicalHistoryInput,
+): Promise<PatientMedicalHistoryEntry> {
+  const { data, error } = await supabase
+    .from('patient_medical_history')
+    .insert({
+      clinic_id: clinicId,
+      patient_id: patientId,
+      created_by: profileId ?? null,
+      updated_by: profileId ?? null,
+      general_responses: input.generalResponses,
+      additional_responses: input.additionalResponses,
+      women_only_responses: input.womenOnlyResponses,
+      conditions: input.conditions,
+      patient_signature_type: input.patientSignature?.type ?? null,
+      patient_signature_data: input.patientSignature?.data ?? null,
+      signed_at: input.signedAt || null,
+    })
+    .select(SELECT)
+    .single()
+
+  if (error) throw error
+  return mapRow(data as unknown as MedicalHistoryQueryRow)
 }
 
 export async function upsertPatientMedicalHistory(
@@ -88,6 +129,8 @@ export async function upsertPatientMedicalHistory(
     .from('patient_medical_history')
     .select('id')
     .eq('patient_id', patientId)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
   if (findError) throw findError

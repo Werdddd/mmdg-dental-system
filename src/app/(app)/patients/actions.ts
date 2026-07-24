@@ -40,6 +40,10 @@ import {
   upsertPatientRadiographConsent,
   type RadiographConsentInput,
 } from '@/lib/data/patient-radiograph-consents'
+import {
+  createPatientMedicalHistory,
+  type MedicalHistoryInput,
+} from '@/lib/data/patient-medical-history'
 import type { ClinicBranch } from '@/lib/dental/branches'
 import { AppError, toActionErrorMessage } from '@/lib/errors'
 
@@ -305,6 +309,24 @@ export async function savePatientRadiographConsentAction(
     input,
   )
   revalidatePath(`/patients/${patientId}`)
+}
+
+export async function submitPatientMedicalHistoryAction(
+  patientId: string,
+  input: MedicalHistoryInput,
+) {
+  const clinicId = await getActiveClinicId()
+  const supabase = await createClient()
+  const profile = await getCurrentProfile()
+  const entry = await createPatientMedicalHistory(
+    supabase,
+    clinicId,
+    patientId,
+    profile?.id,
+    input,
+  )
+  revalidatePath(`/patients/${patientId}`)
+  return entry
 }
 
 export async function getPatientDocumentUrlAction(

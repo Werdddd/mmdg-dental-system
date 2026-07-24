@@ -14,7 +14,7 @@ import type { ClinicBranch } from '@/lib/dental/branches'
 import type { DentistOption } from '@/lib/data/dentists'
 import type { TreatmentRecordRow } from '@/lib/data/treatment-records'
 import type { PaymentRow } from '@/components/payments/data'
-import type { PatientMedicalHistoryRow } from '@/lib/data/patient-medical-history'
+import type { PatientMedicalHistoryEntry } from '@/lib/data/patient-medical-history'
 import type { PatientConsentFormRow } from '@/lib/data/patient-consent-forms'
 import type { PatientRadiographConsentRow } from '@/lib/data/patient-radiograph-consents'
 import type { PatientDocumentRow } from '@/lib/data/patient-documents'
@@ -39,7 +39,7 @@ interface PatientDetailsViewProps {
   treatmentRecords: TreatmentRecordRow[]
   payments: PaymentRow[]
   documents: PatientDocumentRow[]
-  medicalHistory: PatientMedicalHistoryRow | null
+  medicalHistoryList: PatientMedicalHistoryEntry[]
   consentForm: PatientConsentFormRow | null
   radiographConsent: PatientRadiographConsentRow | null
 }
@@ -54,7 +54,7 @@ export function PatientDetailsView({
   treatmentRecords,
   payments,
   documents,
-  medicalHistory,
+  medicalHistoryList,
   consentForm,
   radiographConsent,
 }: PatientDetailsViewProps) {
@@ -95,7 +95,11 @@ export function PatientDetailsView({
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         <MedicalHistoryCard
-          medicalHistory={medicalHistory}
+          patientId={patient.id}
+          firstName={patient.firstName}
+          lastName={patient.lastName}
+          gender={patient.gender}
+          medicalHistoryList={medicalHistoryList}
           isFemale={patient.gender === 'Female'}
         />
         <ConsentFormCard consentForm={consentForm} patientName={patient.name} />

@@ -79,6 +79,23 @@ export interface PatientIntakeFormValues {
   recordStatus: RecordStatus
 }
 
+// The subset of intake values the Medical History Questionnaire section
+// actually needs, so it can be reused outside the full intake wizard (e.g.
+// a standalone "file a new questionnaire" dialog) without pulling in every
+// other section's fields.
+export type MedicalHistorySectionValues = Pick<
+  PatientIntakeFormValues,
+  | 'gender'
+  | 'firstName'
+  | 'lastName'
+  | 'generalResponses'
+  | 'additionalResponses'
+  | 'womenOnlyResponses'
+  | 'conditions'
+  | 'medicalHistorySignature'
+  | 'medicalHistorySignedAt'
+>
+
 export const EMPTY_PATIENT_INTAKE_FORM_VALUES: PatientIntakeFormValues = {
   photoFile: null,
   photoRemoved: false,
